@@ -2,53 +2,49 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"log"
+	"os"
 
 	"github.com/nsf/termbox-go"
 )
 
-func tbPrint(x, y int, fg, bg termbox.Attribute, msg string) {
-	for _, c := range msg {
-		termbox.SetCell(x, y, c, fg, bg)
-		x++
-	}
-}
+var bucketList *BucketList
 
-func draw(count, cursorPosition int) {
-	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	defer termbox.Flush()
+func Init() {
+	bucketList = &BucketList{}
+	bucketList.buckets = ListBuckets()
+	width, height := termbox.Size()
+	fmt.Println(width, height)
+	bucketList.win = newWindow(0, 0, width, height)
+	bucketList.cursorPos = newPosition(0, 0)
+	bucketList.drawPos = newPosition(0, 0)
 
-	for i := 0; i < count; i++ {
-		s := fmt.Sprintf("count = %d", i)
-		tbPrint(0, i, termbox.ColorDefault, termbox.ColorDefault, s)
-	}
-	termbox.SetCursor(0, cursorPosition)
 }
 
 func main() {
-	err := termbox.Init()
+	logfile, err := os.OpenFile("./debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
+		panic("cannnot open test.log:" + err.Error())
+	}
+	defer logfile.Close()
+	log.SetOutput(io.MultiWriter(logfile))
+
+	if err := termbox.Init(); err != nil {
 		panic(err)
 	}
 	termbox.SetInputMode(termbox.InputEsc)
 
-	count := 10
-	cursorPosition := 5
-	draw(count, cursorPosition)
+	Init()
+	bucketList.Draw()
 mainloop:
 	for {
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
-			if ev.Ch == '+' {
-				count++
-			} else if ev.Ch == 'j' {
-				cursorPosition++
-			} else if ev.Ch == 'k' {
-				cursorPosition--
-			} else if ev.Ch == '-' {
-				count--
-			} else if ev.Key == termbox.KeyEsc || ev.Ch == 'q' {
+			if ev.Key == termbox.KeyEsc || ev.Ch == 'q' {
 				break mainloop
 			}
+			bucketList.Handle(ev)
 
 		case termbox.EventError:
 			panic(ev.Err)
@@ -57,9 +53,7 @@ mainloop:
 			break mainloop
 		}
 
-		draw(count, cursorPosition)
+		bucketList.Draw()
 	}
 	termbox.Close()
-
-	fmt.Println("Finished")
 }
