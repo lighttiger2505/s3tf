@@ -33,7 +33,6 @@ func main() {
 	if err := termbox.Init(); err != nil {
 		panic(err)
 	}
-	termbox.SetInputMode(termbox.InputEsc)
 
 	Init()
 	bucketList.Draw()
