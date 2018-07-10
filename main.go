@@ -15,7 +15,9 @@ const (
 	ExitCodeError int = iota //1
 )
 
-var bucketList *BucketList
+var (
+	listView *ListView
+)
 
 func main() {
 	err := newApp().Run(os.Args)
@@ -42,20 +44,13 @@ func newApp() *cli.App {
 }
 
 func run(c *cli.Context) error {
-	logfile, err := os.OpenFile("./debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		panic("cannnot open test.log:" + err.Error())
-	}
-	defer logfile.Close()
-	log.SetOutput(io.MultiWriter(logfile))
-
 	if err := termbox.Init(); err != nil {
 		panic(err)
 	}
 	defer termbox.Close()
 
 	Init()
-	bucketList.Draw()
+	listView.Draw()
 mainloop:
 	for {
 		switch ev := termbox.PollEvent(); ev.Type {
@@ -63,7 +58,7 @@ mainloop:
 			if ev.Key == termbox.KeyEsc || ev.Ch == 'q' {
 				break mainloop
 			}
-			bucketList.Handle(ev)
+			listView.Handle(ev)
 
 		case termbox.EventError:
 			panic(ev.Err)
@@ -72,17 +67,26 @@ mainloop:
 			break mainloop
 		}
 
-		bucketList.Draw()
+		listView.Draw()
 	}
 	return nil
 }
 
 func Init() {
-	bucketList = &BucketList{}
-	bucketList.buckets = ListBuckets()
+	// Init logging setting
+	logfile, err := os.OpenFile("./debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		panic("cannnot open test.log:" + err.Error())
+	}
+	defer logfile.Close()
+	log.SetOutput(io.MultiWriter(logfile))
+
 	width, height := termbox.Size()
-	fmt.Println(width, height)
-	bucketList.win = newWindow(0, 0, width, height)
-	bucketList.cursorPos = newPosition(0, 0)
-	bucketList.drawPos = newPosition(0, 0)
+
+	// Init bucket list
+	listView = &ListView{}
+	listView.objects = ListBuckets()
+	listView.win = newWindow(0, 0, width, height)
+	listView.cursorPos = newPosition(0, 0)
+	listView.drawPos = newPosition(0, 0)
 }

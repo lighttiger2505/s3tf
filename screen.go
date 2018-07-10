@@ -53,23 +53,23 @@ func (w *Window) DrawY(y int) int {
 	return w.Pos.Y + y
 }
 
-type BucketList struct {
+type ListView struct {
 	Render
 	EventHandler
-	buckets   []string
+	objects   []*S3Object
 	win       *Window
 	cursorPos *Position
 	drawPos   *Position
 }
 
-func (w *BucketList) Draw() {
+func (w *ListView) Draw() {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	defer termbox.Flush()
 
-	for i, bucket := range w.buckets {
+	for i, bucket := range w.objects {
 		// if i >= w.drawPos.Y && i <= (w.drawPos.Y+w.win.Box.Height) {
 		if i >= w.drawPos.Y {
-			tbPrint(0, w.win.DrawY(i)-w.drawPos.Y, termbox.ColorDefault, termbox.ColorDefault, bucket)
+			tbPrint(0, w.win.DrawY(i)-w.drawPos.Y, termbox.ColorDefault, termbox.ColorDefault, bucket.Name)
 		}
 	}
 	termbox.SetCursor(0, w.win.DrawY(w.cursorPos.Y)-w.drawPos.Y)
@@ -86,9 +86,9 @@ func (w *BucketList) Draw() {
 	log.Println(status)
 }
 
-func (w *BucketList) Handle(ev termbox.Event) {
+func (w *ListView) Handle(ev termbox.Event) {
 	if ev.Ch == 'j' {
-		if w.cursorPos.Y < (len(w.buckets) - 1) {
+		if w.cursorPos.Y < (len(w.objects) - 1) {
 			w.cursorPos.Y++
 		}
 		if w.cursorPos.Y > (w.drawPos.Y + w.win.Box.Height - 1) {
@@ -101,5 +101,8 @@ func (w *BucketList) Handle(ev termbox.Event) {
 		if w.cursorPos.Y < w.drawPos.Y {
 			w.drawPos.Y = w.cursorPos.Y
 		}
+	} else if ev.Key == termbox.KeyEnter {
+		// object := w.buckets[w.cursorPos.Y]
+		// objectList.objects = ListObjects("geopop-org-logs-dev", object)
 	}
 }

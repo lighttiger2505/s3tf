@@ -13,7 +13,31 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
-func ListBuckets() []string {
+type S3ObjectType int
+
+const (
+	Bucket S3ObjectType = iota //0
+	Dir
+	Object
+)
+
+type S3Object struct {
+	ObjType S3ObjectType
+	Name    string
+	Date    *time.Time
+	Size    *int64
+}
+
+func NewS3Object(objType S3ObjectType, name string, date *time.Time, size *int64) *S3Object {
+	return &S3Object{
+		ObjType: objType,
+		Name:    name,
+		Date:    date,
+		Size:    size,
+	}
+}
+
+func ListBuckets() []*S3Object {
 	sess := session.Must(session.NewSession())
 	svc := s3.New(sess)
 
@@ -35,14 +59,20 @@ func ListBuckets() []string {
 		os.Exit(1)
 	}
 
-	buckets := []string{}
-	for _, output := range result.Buckets {
-		buckets = append(buckets, aws.StringValue(output.Name))
+	var objects []*S3Object
+	for _, bucket := range result.Buckets {
+		obj := NewS3Object(
+			Bucket,
+			aws.StringValue(bucket.Name),
+			bucket.CreationDate,
+			nil,
+		)
+		objects = append(objects, obj)
 	}
-	return buckets
+	return objects
 }
 
-func ListObjects(bucket string) []string {
+func ListObjects(bucket, prefix string) []*S3Object {
 	sess := session.Must(session.NewSession())
 	svc := s3.New(sess)
 
@@ -57,7 +87,7 @@ func ListObjects(bucket string) []string {
 	result, err := svc.ListObjectsWithContext(ctx, &s3.ListObjectsInput{
 		Bucket:    aws.String(bucket),
 		Delimiter: aws.String("/"),
-		Prefix:    aws.String("logs/"),
+		Prefix:    aws.String(prefix),
 	})
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == request.CanceledErrorCode {
@@ -68,12 +98,24 @@ func ListObjects(bucket string) []string {
 		os.Exit(1)
 	}
 
-	keys := []string{}
+	var objects []*S3Object
 	for _, commonPrefix := range result.CommonPrefixes {
-		keys = append(keys, aws.StringValue(commonPrefix.Prefix))
+		obj := NewS3Object(
+			Dir,
+			aws.StringValue(commonPrefix.Prefix),
+			nil,
+			nil,
+		)
+		objects = append(objects, obj)
 	}
 	for _, content := range result.Contents {
-		keys = append(keys, aws.StringValue(content.Key))
+		obj := NewS3Object(
+			Object,
+			aws.StringValue(content.Key),
+			content.LastModified,
+			content.Size,
+		)
+		objects = append(objects, obj)
 	}
-	return keys
+	return objects
 }
