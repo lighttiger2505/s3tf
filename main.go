@@ -44,6 +44,14 @@ func newApp() *cli.App {
 }
 
 func run(c *cli.Context) error {
+	// Init logging setting
+	logfile, err := os.OpenFile("./debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		panic("cannnot open test.log:" + err.Error())
+	}
+	defer logfile.Close()
+	log.SetOutput(io.MultiWriter(logfile))
+
 	if err := termbox.Init(); err != nil {
 		panic(err)
 	}
@@ -73,13 +81,6 @@ mainloop:
 }
 
 func Init() {
-	// Init logging setting
-	logfile, err := os.OpenFile("./debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		panic("cannnot open test.log:" + err.Error())
-	}
-	defer logfile.Close()
-	log.SetOutput(io.MultiWriter(logfile))
 
 	width, height := termbox.Size()
 
