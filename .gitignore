@@ -14,3 +14,4 @@
 # My settings
 /vendor/
 s3tf
+*.log
