@@ -56,6 +56,7 @@ func (w *Window) DrawY(y int) int {
 type ListView struct {
 	Render
 	EventHandler
+	bucket    string
 	objects   []*S3Object
 	win       *Window
 	cursorPos *Position
@@ -102,7 +103,17 @@ func (w *ListView) Handle(ev termbox.Event) {
 			w.drawPos.Y = w.cursorPos.Y
 		}
 	} else if ev.Key == termbox.KeyEnter {
-		// object := w.buckets[w.cursorPos.Y]
+		obj := w.objects[w.cursorPos.Y]
+		switch obj.ObjType {
+		case Bucket:
+			w.bucket = obj.Name
+			w.objects = ListObjects(w.bucket, "")
+		case Dir:
+			w.objects = ListObjects(w.bucket, obj.Name)
+		case Object:
+		default:
+			log.Fatalln("Invalid s3 object type")
+		}
 		// objectList.objects = ListObjects("geopop-org-logs-dev", object)
 	}
 }
