@@ -53,11 +53,49 @@ func (w *Window) DrawY(y int) int {
 	return w.Pos.Y + y
 }
 
+type Node struct {
+	key      string
+	parent   *Node
+	children map[string]*Node
+	objects  []*S3Object
+	position int
+}
+
+func NewNode(key string, parent *Node, objects []*S3Object) *Node {
+	return &Node{
+		key:      key,
+		parent:   parent,
+		objects:  objects,
+		children: map[string]*Node{},
+	}
+}
+
+func (n *Node) IsRoot() bool {
+	if n.parent == nil {
+		return true
+	}
+	return false
+}
+
+func (n *Node) IsExistChildren(key string) bool {
+	_, ok := n.children[key]
+	return ok
+}
+
+func (n *Node) GetChild(key string) *Node {
+	return n.children[key]
+}
+
+func (n *Node) AddChild(key string, node *Node) {
+	n.children[key] = node
+}
+
 type ListView struct {
 	Render
 	EventHandler
+	navigator *Node
 	bucket    string
-	objects   []*S3Object
+	// objects   []*S3Object
 	win       *Window
 	cursorPos *Position
 	drawPos   *Position
@@ -67,7 +105,7 @@ func (w *ListView) Draw() {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	defer termbox.Flush()
 
-	for i, bucket := range w.objects {
+	for i, bucket := range w.navigator.objects {
 		// if i >= w.drawPos.Y && i <= (w.drawPos.Y+w.win.Box.Height) {
 		if i >= w.drawPos.Y {
 			tbPrint(0, w.win.DrawY(i)-w.drawPos.Y, termbox.ColorDefault, termbox.ColorDefault, bucket.Name)
@@ -89,7 +127,7 @@ func (w *ListView) Draw() {
 
 func (w *ListView) Handle(ev termbox.Event) {
 	if ev.Ch == 'j' {
-		if w.cursorPos.Y < (len(w.objects) - 1) {
+		if w.cursorPos.Y < (len(w.navigator.objects) - 1) {
 			w.cursorPos.Y++
 		}
 		if w.cursorPos.Y > (w.drawPos.Y + w.win.Box.Height - 1) {
@@ -102,17 +140,62 @@ func (w *ListView) Handle(ev termbox.Event) {
 		if w.cursorPos.Y < w.drawPos.Y {
 			w.drawPos.Y = w.cursorPos.Y
 		}
-	} else if ev.Key == termbox.KeyEnter {
-		obj := w.objects[w.cursorPos.Y]
-		switch obj.ObjType {
-		case Bucket:
-			w.bucket = obj.Name
-			w.objects = ListObjects(w.bucket, "")
-		case Dir:
-			w.objects = ListObjects(w.bucket, obj.Name)
-		case Object:
-		default:
-			log.Fatalln("Invalid s3 object type")
+	} else if ev.Ch == 'h' {
+		if !w.navigator.IsRoot() {
+			w.loadPrev()
 		}
+	} else if ev.Ch == 'l' || ev.Key == termbox.KeyEnter {
+		obj := w.navigator.objects[w.cursorPos.Y]
+		w.open(obj)
 	}
+}
+
+func (w *ListView) open(obj *S3Object) {
+	switch obj.ObjType {
+	case Bucket:
+		bucketName := obj.Name
+		w.bucket = bucketName
+		if w.navigator.IsExistChildren(bucketName) {
+			w.moveNext(bucketName)
+			return
+		}
+		objects := ListObjects(bucketName, "")
+		w.loadNext(bucketName, objects)
+	case Dir:
+		bucketName := w.bucket
+		objectKey := obj.Name
+		if w.navigator.IsExistChildren(objectKey) {
+			w.moveNext(objectKey)
+			return
+		}
+		objects := ListObjects(bucketName, objectKey)
+		w.loadNext(objectKey, objects)
+	case Object:
+	default:
+		log.Fatalln("Invalid s3 object type")
+	}
+}
+
+func (w *ListView) moveNext(key string) {
+	child := w.navigator.GetChild(key)
+	w.navigator = child
+	w.cursorPos.Y = 0
+	log.Printf("Move next. child:%s", child.key)
+}
+
+func (w *ListView) loadNext(key string, objects []*S3Object) {
+	parent := w.navigator
+	child := NewNode(key, parent, objects)
+	parent.AddChild(key, child)
+	w.navigator = child
+	w.cursorPos.Y = 0
+	log.Printf("Load next. parent:%s, child:%s", parent.key, child.key)
+}
+
+func (w *ListView) loadPrev() {
+	log.Println("load prev")
+	parent := w.navigator.parent
+	w.navigator = parent
+	w.cursorPos.Y = 0
+	log.Printf("Load prev. parent:%s", parent.key)
 }

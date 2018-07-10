@@ -81,12 +81,15 @@ mainloop:
 }
 
 func Init() {
+	// Init s3 data structure
+	rootNode := NewNode("/", nil, ListBuckets())
 
 	width, height := termbox.Size()
 
 	// Init bucket list
 	listView = &ListView{}
-	listView.objects = ListBuckets()
+	listView.navigator = rootNode
+	// listView.objects = ListBuckets()
 	listView.win = newWindow(0, 0, width, height)
 	listView.cursorPos = newPosition(0, 0)
 	listView.drawPos = newPosition(0, 0)
