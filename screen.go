@@ -114,6 +114,5 @@ func (w *ListView) Handle(ev termbox.Event) {
 		default:
 			log.Fatalln("Invalid s3 object type")
 		}
-		// objectList.objects = ListObjects("geopop-org-logs-dev", object)
 	}
 }
