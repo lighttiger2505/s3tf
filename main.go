@@ -16,7 +16,8 @@ const (
 )
 
 var (
-	listView *ListView
+	listView       *ListView
+	navigationView *NavigationView
 )
 
 func main() {
@@ -58,7 +59,7 @@ func run(c *cli.Context) error {
 	defer termbox.Close()
 
 	Init()
-	listView.Draw()
+	draw()
 mainloop:
 	for {
 		switch ev := termbox.PollEvent(); ev.Type {
@@ -74,10 +75,16 @@ mainloop:
 		case termbox.EventInterrupt:
 			break mainloop
 		}
-
-		listView.Draw()
+		draw()
 	}
 	return nil
+}
+
+func draw() {
+	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	defer termbox.Flush()
+	listView.Draw()
+	navigationView.Draw()
 }
 
 func Init() {
@@ -86,11 +93,13 @@ func Init() {
 
 	width, height := termbox.Size()
 
-	// Init bucket list
 	listView = &ListView{}
 	listView.navigator = rootNode
-	// listView.objects = ListBuckets()
-	listView.win = newWindow(0, 0, width, height)
+	listView.win = newWindow(0, 1, width, height-1)
 	listView.cursorPos = newPosition(0, 0)
 	listView.drawPos = newPosition(0, 0)
+
+	navigationView = &NavigationView{}
+	navigationView.key = "hogehogehogehogehoge"
+	navigationView.win = newWindow(0, 0, width, 1)
 }

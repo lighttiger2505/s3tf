@@ -95,16 +95,12 @@ type ListView struct {
 	EventHandler
 	navigator *Node
 	bucket    string
-	// objects   []*S3Object
 	win       *Window
 	cursorPos *Position
 	drawPos   *Position
 }
 
 func (w *ListView) Draw() {
-	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	defer termbox.Flush()
-
 	for i, bucket := range w.navigator.objects {
 		// if i >= w.drawPos.Y && i <= (w.drawPos.Y+w.win.Box.Height) {
 		if i >= w.drawPos.Y {
@@ -198,4 +194,14 @@ func (w *ListView) loadPrev() {
 	w.navigator = parent
 	w.cursorPos.Y = 0
 	log.Printf("Load prev. parent:%s", parent.key)
+}
+
+type NavigationView struct {
+	Render
+	key string
+	win *Window
+}
+
+func (w *NavigationView) Draw() {
+	tbPrint(0, w.win.DrawY(0), termbox.ColorWhite, termbox.ColorGreen, w.key)
 }
