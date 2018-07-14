@@ -203,7 +203,7 @@ func (w *ListView) open(obj *S3Object) {
 func (w *ListView) moveNext(key string) {
 	child := w.navigator.GetChild(key)
 	w.navigator = child
-	w.cursorPos.Y = 0
+	w.cursorPos.Y = child.position
 	log.Printf("Move next. child:%s", child.key)
 }
 
