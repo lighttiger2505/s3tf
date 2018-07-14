@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -52,9 +52,9 @@ func ListBuckets() []*S3Object {
 	result, err := svc.ListBucketsWithContext(ctx, &s3.ListBucketsInput{})
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == request.CanceledErrorCode {
-			fmt.Fprintf(os.Stderr, "upload canceled due to timeout, %v\n", err)
+			log.Printf("upload canceled due to timeout, %v", err)
 		} else {
-			fmt.Fprintf(os.Stderr, "failed to upload object, %v\n", err)
+			log.Printf("failed to upload object, %v", err)
 		}
 		os.Exit(1)
 	}
@@ -91,9 +91,9 @@ func ListObjects(bucket, prefix string) []*S3Object {
 	})
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == request.CanceledErrorCode {
-			fmt.Fprintf(os.Stderr, "upload canceled due to timeout, %v\n", err)
+			log.Printf("upload canceled due to timeout, %v", err)
 		} else {
-			fmt.Fprintf(os.Stderr, "failed to upload object, %v\n", err)
+			log.Printf("failed to upload object, %v", err)
 		}
 		os.Exit(1)
 	}
