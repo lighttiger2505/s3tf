@@ -216,5 +216,5 @@ func (w *NavigationView) SetKey(bucket, key string) {
 
 func (w *NavigationView) Draw() {
 	str := PadRight(w.key, w.win.Box.Width, " ")
-	tbPrint(0, w.win.DrawY(0), termbox.ColorWhite, termbox.ColorGreen, str)
+	tbPrint(0, w.win.DrawY(0), termbox.ColorWhite, termbox.ColorBlue, str)
 }
