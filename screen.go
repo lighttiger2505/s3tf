@@ -105,10 +105,19 @@ func (w *ListView) Draw() {
 	for i, obj := range w.navigator.objects {
 		drawStr := strings.TrimPrefix(obj.Name, w.navigator.key)
 		if i >= w.drawPos.Y {
-			tbPrint(0, w.win.DrawY(i)-w.drawPos.Y, termbox.ColorDefault, termbox.ColorDefault, drawStr)
+			drawY := w.win.DrawY(i) - w.drawPos.Y
+			var fg, bg termbox.Attribute
+			if drawY == w.getCursorY() {
+				drawStr = PadRight(drawStr, w.win.Box.Width, " ")
+				fg = termbox.ColorWhite
+				bg = termbox.ColorGreen
+			} else {
+				fg = termbox.ColorDefault
+				bg = termbox.ColorDefault
+			}
+			tbPrint(0, drawY, fg, bg, drawStr)
 		}
 	}
-	termbox.SetCursor(0, w.win.DrawY(w.cursorPos.Y)-w.drawPos.Y)
 
 	status := fmt.Sprintf(
 		"pos: (%d, %d) draw: (%d, %d) box: (%d, %d)",
@@ -120,6 +129,10 @@ func (w *ListView) Draw() {
 		w.win.Box.Height,
 	)
 	log.Println(status)
+}
+
+func (w *ListView) getCursorY() int {
+	return w.win.DrawY(w.cursorPos.Y) - w.drawPos.Y
 }
 
 func (w *ListView) Handle(ev termbox.Event) {
