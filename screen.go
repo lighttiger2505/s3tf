@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	termbox "github.com/nsf/termbox-go"
 )
@@ -101,10 +102,10 @@ type ListView struct {
 }
 
 func (w *ListView) Draw() {
-	for i, bucket := range w.navigator.objects {
-		// if i >= w.drawPos.Y && i <= (w.drawPos.Y+w.win.Box.Height) {
+	for i, obj := range w.navigator.objects {
+		drawStr := strings.TrimPrefix(obj.Name, w.navigator.key)
 		if i >= w.drawPos.Y {
-			tbPrint(0, w.win.DrawY(i)-w.drawPos.Y, termbox.ColorDefault, termbox.ColorDefault, bucket.Name)
+			tbPrint(0, w.win.DrawY(i)-w.drawPos.Y, termbox.ColorDefault, termbox.ColorDefault, drawStr)
 		}
 	}
 	termbox.SetCursor(0, w.win.DrawY(w.cursorPos.Y)-w.drawPos.Y)
