@@ -161,6 +161,7 @@ func (w *ListView) up() {
 	if w.cursorPos.Y < w.drawPos.Y {
 		w.drawPos.Y = w.cursorPos.Y
 	}
+	log.Printf("Up. CursorPosition:%d, DrawPosition:%d", w.cursorPos.Y, w.drawPos.Y)
 }
 
 func (w *ListView) down() {
@@ -171,6 +172,7 @@ func (w *ListView) down() {
 	if w.cursorPos.Y > (w.drawPos.Y + w.win.Box.Height - 1) {
 		w.drawPos.Y = w.cursorPos.Y - w.win.Box.Height + 1
 	}
+	log.Printf("Down. CursorPosition:%d, DrawPosition:%d", w.cursorPos.Y, w.drawPos.Y)
 }
 
 func (w *ListView) open(obj *S3Object) {
@@ -199,7 +201,6 @@ func (w *ListView) open(obj *S3Object) {
 	}
 }
 
-	objects := ListObjects(w.bucket, w.navigator.key)
 func (w *ListView) moveNext(key string) {
 	child := w.navigator.GetChild(key)
 	w.navigator = child
