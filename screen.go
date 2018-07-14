@@ -139,6 +139,7 @@ func (w *ListView) Handle(ev termbox.Event) {
 	if ev.Ch == 'j' {
 		if w.cursorPos.Y < (len(w.navigator.objects) - 1) {
 			w.cursorPos.Y++
+			w.navigator.position = w.cursorPos.Y
 		}
 		if w.cursorPos.Y > (w.drawPos.Y + w.win.Box.Height - 1) {
 			w.drawPos.Y = w.cursorPos.Y - w.win.Box.Height + 1
@@ -146,6 +147,7 @@ func (w *ListView) Handle(ev termbox.Event) {
 	} else if ev.Ch == 'k' {
 		if w.cursorPos.Y > 0 {
 			w.cursorPos.Y--
+			w.navigator.position = w.cursorPos.Y
 		}
 		if w.cursorPos.Y < w.drawPos.Y {
 			w.drawPos.Y = w.cursorPos.Y
@@ -198,15 +200,14 @@ func (w *ListView) loadNext(key string, objects []*S3Object) {
 	child := NewNode(key, parent, objects)
 	parent.AddChild(key, child)
 	w.navigator = child
-	w.cursorPos.Y = 0
+	w.cursorPos.Y = child.position
 	log.Printf("Load next. parent:%s, child:%s", parent.key, child.key)
 }
 
 func (w *ListView) loadPrev() {
-	log.Println("load prev")
 	parent := w.navigator.parent
 	w.navigator = parent
-	w.cursorPos.Y = 0
+	w.cursorPos.Y = parent.position
 	w.bucket = ""
 	log.Printf("Load prev. parent:%s", parent.key)
 }
