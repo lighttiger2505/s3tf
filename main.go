@@ -59,6 +59,7 @@ func run(c *cli.Context) error {
 	defer termbox.Close()
 
 	Init()
+	navigationView.SetKey(listView.bucket, listView.navigator.key)
 	draw()
 mainloop:
 	for {
@@ -68,6 +69,7 @@ mainloop:
 				break mainloop
 			}
 			listView.Handle(ev)
+			navigationView.SetKey(listView.bucket, listView.navigator.key)
 
 		case termbox.EventError:
 			panic(ev.Err)
@@ -89,7 +91,7 @@ func draw() {
 
 func Init() {
 	// Init s3 data structure
-	rootNode := NewNode("/", nil, ListBuckets())
+	rootNode := NewNode("", nil, ListBuckets())
 
 	width, height := termbox.Size()
 
@@ -100,6 +102,5 @@ func Init() {
 	listView.drawPos = newPosition(0, 0)
 
 	navigationView = &NavigationView{}
-	navigationView.key = "hogehogehogehogehoge"
 	navigationView.win = newWindow(0, 0, width, 1)
 }

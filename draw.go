@@ -10,3 +10,14 @@ func tbPrint(x, y int, fg, bg termbox.Attribute, msg string) {
 		x++
 	}
 }
+
+func times(str string, n int) (out string) {
+	for i := 0; i < n; i++ {
+		out += str
+	}
+	return
+}
+
+func PadRight(str string, length int, padChar string) string {
+	return str + times(padChar, length-len(str))
+}

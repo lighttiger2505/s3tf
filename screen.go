@@ -193,6 +193,7 @@ func (w *ListView) loadPrev() {
 	parent := w.navigator.parent
 	w.navigator = parent
 	w.cursorPos.Y = 0
+	w.bucket = ""
 	log.Printf("Load prev. parent:%s", parent.key)
 }
 
@@ -202,6 +203,17 @@ type NavigationView struct {
 	win *Window
 }
 
+func (w *NavigationView) SetKey(bucket, key string) {
+	if key == "" {
+		w.key = "list bucket"
+	} else if bucket == key {
+		w.key = bucket
+	} else {
+		w.key = strings.Join([]string{bucket, key}, "/")
+	}
+}
+
 func (w *NavigationView) Draw() {
-	tbPrint(0, w.win.DrawY(0), termbox.ColorWhite, termbox.ColorGreen, w.key)
+	str := PadRight(w.key, w.win.Box.Width, " ")
+	tbPrint(0, w.win.DrawY(0), termbox.ColorWhite, termbox.ColorGreen, str)
 }
