@@ -111,6 +111,9 @@ func (w *ListView) Draw() {
 				drawStr = PadRight(drawStr, w.win.Box.Width, " ")
 				fg = termbox.ColorWhite
 				bg = termbox.ColorGreen
+			} else if Bucket == obj.ObjType || Dir == obj.ObjType {
+				fg = termbox.ColorGreen
+				bg = termbox.ColorDefault
 			} else {
 				fg = termbox.ColorDefault
 				bg = termbox.ColorDefault
@@ -137,9 +140,9 @@ func (w *ListView) getCursorY() int {
 
 func (w *ListView) Handle(ev termbox.Event) {
 	if ev.Ch == 'j' {
-		w.Down()
+		w.down()
 	} else if ev.Ch == 'k' {
-		w.Up()
+		w.up()
 	} else if ev.Ch == 'h' {
 		if !w.navigator.IsRoot() {
 			w.loadPrev()
@@ -150,7 +153,7 @@ func (w *ListView) Handle(ev termbox.Event) {
 	}
 }
 
-func (w *ListView) Up() {
+func (w *ListView) up() {
 	if w.cursorPos.Y > 0 {
 		w.cursorPos.Y--
 		w.navigator.position = w.cursorPos.Y
@@ -159,7 +162,8 @@ func (w *ListView) Up() {
 		w.drawPos.Y = w.cursorPos.Y
 	}
 }
-func (w *ListView) Down() {
+
+func (w *ListView) down() {
 	if w.cursorPos.Y < (len(w.navigator.objects) - 1) {
 		w.cursorPos.Y++
 		w.navigator.position = w.cursorPos.Y
@@ -195,6 +199,7 @@ func (w *ListView) open(obj *S3Object) {
 	}
 }
 
+	objects := ListObjects(w.bucket, w.navigator.key)
 func (w *ListView) moveNext(key string) {
 	child := w.navigator.GetChild(key)
 	w.navigator = child
