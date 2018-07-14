@@ -137,21 +137,9 @@ func (w *ListView) getCursorY() int {
 
 func (w *ListView) Handle(ev termbox.Event) {
 	if ev.Ch == 'j' {
-		if w.cursorPos.Y < (len(w.navigator.objects) - 1) {
-			w.cursorPos.Y++
-			w.navigator.position = w.cursorPos.Y
-		}
-		if w.cursorPos.Y > (w.drawPos.Y + w.win.Box.Height - 1) {
-			w.drawPos.Y = w.cursorPos.Y - w.win.Box.Height + 1
-		}
+		w.Down()
 	} else if ev.Ch == 'k' {
-		if w.cursorPos.Y > 0 {
-			w.cursorPos.Y--
-			w.navigator.position = w.cursorPos.Y
-		}
-		if w.cursorPos.Y < w.drawPos.Y {
-			w.drawPos.Y = w.cursorPos.Y
-		}
+		w.Up()
 	} else if ev.Ch == 'h' {
 		if !w.navigator.IsRoot() {
 			w.loadPrev()
@@ -159,6 +147,25 @@ func (w *ListView) Handle(ev termbox.Event) {
 	} else if ev.Ch == 'l' || ev.Key == termbox.KeyEnter {
 		obj := w.navigator.objects[w.cursorPos.Y]
 		w.open(obj)
+	}
+}
+
+func (w *ListView) Up() {
+	if w.cursorPos.Y > 0 {
+		w.cursorPos.Y--
+		w.navigator.position = w.cursorPos.Y
+	}
+	if w.cursorPos.Y < w.drawPos.Y {
+		w.drawPos.Y = w.cursorPos.Y
+	}
+}
+func (w *ListView) Down() {
+	if w.cursorPos.Y < (len(w.navigator.objects) - 1) {
+		w.cursorPos.Y++
+		w.navigator.position = w.cursorPos.Y
+	}
+	if w.cursorPos.Y > (w.drawPos.Y + w.win.Box.Height - 1) {
+		w.drawPos.Y = w.cursorPos.Y - w.win.Box.Height + 1
 	}
 }
 
