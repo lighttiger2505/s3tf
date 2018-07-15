@@ -39,10 +39,19 @@ func newApp() *cli.App {
 	app.Version = "0.0.1"
 	app.Author = "lighttiger2505"
 	app.Email = "lighttiger2505@gmail.com"
-	app.Flags = []cli.Flag{}
+	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:  "mock, m",
+			Usage: "S3 api request to mock server on localhost(minio)",
+		},
+	}
 	app.Action = run
 	return app
 }
+
+var (
+	mockFlag bool
+)
 
 func run(c *cli.Context) error {
 	// Init logging setting
@@ -52,6 +61,9 @@ func run(c *cli.Context) error {
 	}
 	defer logfile.Close()
 	log.SetOutput(io.MultiWriter(logfile))
+
+	// Set flags
+	mockFlag = c.Bool("mock")
 
 	if err := termbox.Init(); err != nil {
 		panic(err)

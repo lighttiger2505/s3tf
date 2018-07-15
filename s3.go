@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -39,9 +40,7 @@ func NewS3Object(objType S3ObjectType, name string, date *time.Time, size *int64
 }
 
 func ListBuckets() []*S3Object {
-	sess := session.Must(session.NewSession())
-	svc := s3.New(sess)
-
+	client := getS3Client()
 	ctx := context.Background()
 	timeout := time.Second * 30
 	var cancelFn func()
@@ -50,7 +49,7 @@ func ListBuckets() []*S3Object {
 	}
 	defer cancelFn()
 
-	result, err := svc.ListBucketsWithContext(ctx, &s3.ListBucketsInput{})
+	result, err := client.ListBucketsWithContext(ctx, &s3.ListBucketsInput{})
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == request.CanceledErrorCode {
 			log.Printf("upload canceled due to timeout, %v", err)
@@ -74,9 +73,7 @@ func ListBuckets() []*S3Object {
 }
 
 func ListObjects(bucket, prefix string) []*S3Object {
-	sess := session.Must(session.NewSession())
-	svc := s3.New(sess)
-
+	client := getS3Client()
 	ctx := context.Background()
 	timeout := time.Second * 30
 	var cancelFn func()
@@ -85,7 +82,7 @@ func ListObjects(bucket, prefix string) []*S3Object {
 	}
 	defer cancelFn()
 
-	result, err := svc.ListObjectsWithContext(ctx, &s3.ListObjectsInput{
+	result, err := client.ListObjectsWithContext(ctx, &s3.ListObjectsInput{
 		Bucket:    aws.String(bucket),
 		Delimiter: aws.String("/"),
 		Prefix:    aws.String(prefix),
@@ -128,4 +125,28 @@ func ListObjects(bucket, prefix string) []*S3Object {
 		objects = append(objects, obj)
 	}
 	return objects
+}
+
+func getS3Client() *s3.S3 {
+	if mockFlag {
+		return getMinioClient()
+	}
+	return getAWSClient()
+}
+
+func getMinioClient() *s3.S3 {
+	cfg := &aws.Config{
+		Credentials:      credentials.NewStaticCredentials("access_key", "secret_key", ""),
+		Endpoint:         aws.String("localhost:9000"),
+		Region:           aws.String("ap-northeast-1"),
+		DisableSSL:       aws.Bool(true),
+		S3ForcePathStyle: aws.Bool(true),
+	}
+	sess := session.New(cfg)
+	return s3.New(sess)
+}
+
+func getAWSClient() *s3.S3 {
+	sess := session.Must(session.NewSession())
+	return s3.New(sess)
 }
