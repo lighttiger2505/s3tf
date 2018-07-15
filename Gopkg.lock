@@ -23,6 +23,7 @@
     "aws/signer/v4",
     "internal/sdkio",
     "internal/sdkrand",
+    "internal/sdkuri",
     "internal/shareddefaults",
     "private/protocol",
     "private/protocol/eventstream",
@@ -33,10 +34,12 @@
     "private/protocol/restxml",
     "private/protocol/xml/xmlutil",
     "service/s3",
+    "service/s3/s3iface",
+    "service/s3/s3manager",
     "service/sts"
   ]
-  revision = "16cb9f62f8a8b7af4f38725567f5ce762e1d562b"
-  version = "v1.14.21"
+  revision = "94b80148ea4b1b136682116294b151766a3b85c2"
+  version = "v1.14.27"
 
 [[projects]]
   name = "github.com/go-ini/ini"
@@ -70,6 +73,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "50f3c55c35ef90c5b0fad8a3710377f4d7bdb7a98af39fde3f1d4920dbf2e7e6"
+  inputs-digest = "70ce02478097ad03e0ec14049fd0b13747b4b130abf91449de23b5727e815865"
   solver-name = "gps-cdcl"
   solver-version = 1
