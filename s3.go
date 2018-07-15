@@ -18,6 +18,7 @@ type S3ObjectType int
 const (
 	Bucket S3ObjectType = iota //0
 	Dir
+	PreDir
 	Object
 )
 
@@ -99,6 +100,15 @@ func ListObjects(bucket, prefix string) []*S3Object {
 	}
 
 	var objects []*S3Object
+
+	obj := NewS3Object(
+		PreDir,
+		"..",
+		nil,
+		nil,
+	)
+	objects = append(objects, obj)
+
 	for _, commonPrefix := range result.CommonPrefixes {
 		obj := NewS3Object(
 			Dir,

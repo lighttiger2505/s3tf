@@ -63,12 +63,16 @@ type Node struct {
 }
 
 func NewNode(key string, parent *Node, objects []*S3Object) *Node {
-	return &Node{
+	node := &Node{
 		key:      key,
 		parent:   parent,
 		objects:  objects,
 		children: map[string]*Node{},
 	}
+	if len(objects) > 1 {
+		node.position = 1
+	}
+	return node
 }
 
 func (n *Node) IsRoot() bool {
@@ -111,7 +115,7 @@ func (w *ListView) Draw() {
 				drawStr = PadRight(drawStr, w.win.Box.Width, " ")
 				fg = termbox.ColorWhite
 				bg = termbox.ColorGreen
-			} else if Bucket == obj.ObjType || Dir == obj.ObjType {
+			} else if Bucket == obj.ObjType || PreDir == obj.ObjType || Dir == obj.ObjType {
 				fg = termbox.ColorGreen
 				bg = termbox.ColorDefault
 			} else {
@@ -195,6 +199,8 @@ func (w *ListView) open(obj *S3Object) {
 		}
 		objects := ListObjects(bucketName, objectKey)
 		w.loadNext(objectKey, objects)
+	case PreDir:
+		w.loadPrev()
 	case Object:
 	default:
 		log.Fatalln("Invalid s3 object type")
