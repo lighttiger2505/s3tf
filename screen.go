@@ -107,7 +107,11 @@ type ListView struct {
 
 func (w *ListView) Draw() {
 	for i, obj := range w.navigator.objects {
-		drawStr := strings.TrimPrefix(obj.Name, w.navigator.key)
+		drawStr := obj.Name
+		if w.navigator.parent == nil || !w.navigator.parent.IsRoot() {
+			drawStr = strings.TrimPrefix(obj.Name, w.navigator.key)
+		}
+
 		if i >= w.drawPos.Y {
 			drawY := w.win.DrawY(i) - w.drawPos.Y
 			var fg, bg termbox.Attribute
