@@ -155,6 +155,9 @@ func (w *ListView) Handle(ev termbox.Event) {
 		if !w.navigator.IsRoot() {
 			w.loadPrev()
 		}
+	} else if ev.Ch == 'w' {
+		obj := w.navigator.objects[w.cursorPos.Y]
+		w.download(obj)
 	} else if ev.Ch == 'l' || ev.Key == termbox.KeyEnter {
 		obj := w.navigator.objects[w.cursorPos.Y]
 		w.open(obj)
@@ -181,6 +184,22 @@ func (w *ListView) down() {
 		w.drawPos.Y = w.cursorPos.Y - w.win.Box.Height + 1
 	}
 	log.Printf("Down. CursorPosition:%d, DrawPosition:%d", w.cursorPos.Y, w.drawPos.Y)
+}
+
+func (w *ListView) download(obj *S3Object) {
+	switch obj.ObjType {
+	case Bucket:
+		log.Println("bucket is not download")
+	case Dir:
+		log.Println("directory is not download")
+	case PreDir:
+		log.Println("directory is not download")
+	case Object:
+		bucketName := w.bucket
+		DownloadObject(bucketName, obj.Name)
+	default:
+		log.Println("Invalid s3 object type")
+	}
 }
 
 func (w *ListView) open(obj *S3Object) {
