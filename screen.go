@@ -82,6 +82,16 @@ func (n *Node) IsRoot() bool {
 	return false
 }
 
+func (n *Node) IsBucketRoot() bool {
+	if n.IsRoot() {
+		return false
+	}
+	if n.parent.IsRoot() {
+		return true
+	}
+	return false
+}
+
 func (n *Node) IsExistChildren(key string) bool {
 	_, ok := n.children[key]
 	return ok
@@ -155,6 +165,8 @@ func (w *ListView) Handle(ev termbox.Event) {
 		if !w.navigator.IsRoot() {
 			w.loadPrev()
 		}
+	} else if ev.Ch == 'r' {
+		w.reload()
 	} else if ev.Ch == 'w' {
 		obj := w.navigator.objects[w.cursorPos.Y]
 		w.download(obj)
@@ -200,6 +212,20 @@ func (w *ListView) download(obj *S3Object) {
 	default:
 		log.Println("Invalid s3 object type")
 	}
+}
+
+func (w *ListView) reload() {
+	if w.navigator.IsRoot() {
+		w.navigator.objects = ListBuckets()
+		return
+	}
+
+	if !w.navigator.parent.IsBucketRoot() {
+		w.navigator.objects = ListObjects(w.bucket, "")
+		return
+	}
+
+	w.navigator.objects = ListObjects(w.bucket, w.navigator.key)
 }
 
 func (w *ListView) open(obj *S3Object) {
