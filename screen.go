@@ -93,17 +93,6 @@ func (v *ListView) Draw() {
 			tbPrint(0, drawY, fg, bg, drawStr)
 		}
 	}
-
-	status := fmt.Sprintf(
-		"pos: (%d, %d) draw: (%d, %d) box: (%d, %d)",
-		v.cursorPos.X,
-		v.cursorPos.Y,
-		v.drawPos.X,
-		v.drawPos.Y,
-		v.win.Box.Width,
-		v.win.Box.Height,
-	)
-	log.Println(status)
 }
 
 func (v *ListView) getCursorY() int {
