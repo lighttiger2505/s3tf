@@ -18,6 +18,7 @@ const (
 var (
 	listView       *ListView
 	navigationView *NavigationView
+	statusView     *StatusView
 )
 
 func main() {
@@ -99,6 +100,7 @@ func draw() {
 	defer termbox.Flush()
 	listView.Draw()
 	navigationView.Draw()
+	statusView.Draw()
 }
 
 func Init() {
@@ -109,10 +111,13 @@ func Init() {
 
 	listView = &ListView{}
 	listView.navigator = rootNode
-	listView.win = newWindow(0, 1, width, height-1)
+	listView.win = newWindow(0, 1, width, height-2)
 	listView.cursorPos = newPosition(0, 0)
 	listView.drawPos = newPosition(0, 0)
 
 	navigationView = &NavigationView{}
 	navigationView.win = newWindow(0, 0, width, 1)
+
+	statusView = &StatusView{}
+	statusView.win = newWindow(0, height-1, width, 1)
 }

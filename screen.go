@@ -199,16 +199,19 @@ func (w *ListView) down() {
 }
 
 func (w *ListView) download(obj *S3Object) {
+	bucketName := w.bucket
+	path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
 	switch obj.ObjType {
 	case Bucket:
-		log.Println("bucket is not download")
+		statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
 	case Dir:
-		log.Println("directory is not download")
+		statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
 	case PreDir:
-		log.Println("directory is not download")
+		statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
 	case Object:
-		bucketName := w.bucket
 		DownloadObject(bucketName, obj.Name)
+		path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
+		statusView.msg = fmt.Sprintf("download complate. %s", path)
 	default:
 		log.Println("Invalid s3 object type")
 	}
@@ -298,5 +301,16 @@ func (w *NavigationView) SetKey(bucket, key string) {
 
 func (w *NavigationView) Draw() {
 	str := PadRight(w.key, w.win.Box.Width, " ")
+	tbPrint(0, w.win.DrawY(0), termbox.ColorWhite, termbox.ColorBlue, str)
+}
+
+type StatusView struct {
+	Render
+	msg string
+	win *Window
+}
+
+func (w *StatusView) Draw() {
+	str := PadRight(w.msg, w.win.Box.Width, " ")
 	tbPrint(0, w.win.DrawY(0), termbox.ColorWhite, termbox.ColorBlue, str)
 }
