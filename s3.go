@@ -162,33 +162,23 @@ func DownloadObject(bucket, key string) {
 }
 
 func getS3Downloader() *s3manager.Downloader {
+	var sess *session.Session
 	if mockFlag {
-		return getMinioDownloader()
+		sess = getMinioSession()
+	} else {
+		sess = getAWSSession()
 	}
-	return getAWSDownloader()
+	return s3manager.NewDownloader(sess)
 }
 
 func getS3Client() *s3.S3 {
+	var sess *session.Session
 	if mockFlag {
-		return getMinioClient()
+		sess = getMinioSession()
+	} else {
+		sess = getAWSSession()
 	}
-	return getAWSClient()
-}
-
-func getMinioClient() *s3.S3 {
-	cfg := &aws.Config{
-		Credentials:      credentials.NewStaticCredentials("access_key", "secret_key", ""),
-		Endpoint:         aws.String("localhost:9000"),
-		Region:           aws.String("ap-northeast-1"),
-		DisableSSL:       aws.Bool(true),
-		S3ForcePathStyle: aws.Bool(true),
-	}
-	sess := session.New(cfg)
 	return s3.New(sess)
-}
-
-func getMinioDownloader() *s3manager.Downloader {
-	return s3manager.NewDownloader(getMinioSession())
 }
 
 func getMinioSession() *session.Session {
@@ -200,15 +190,6 @@ func getMinioSession() *session.Session {
 		S3ForcePathStyle: aws.Bool(true),
 	}
 	return session.New(cfg)
-}
-
-func getAWSClient() *s3.S3 {
-	sess := session.Must(session.NewSession())
-	return s3.New(sess)
-}
-
-func getAWSDownloader() *s3manager.Downloader {
-	return s3manager.NewDownloader(getAWSSession())
 }
 
 func getAWSSession() *session.Session {
