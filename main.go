@@ -15,12 +15,6 @@ const (
 	ExitCodeError int = iota //1
 )
 
-var (
-	listView       *ListView
-	navigationView *NavigationView
-	statusView     *StatusView
-)
-
 func main() {
 	err := newApp().Run(os.Args)
 	var exitCode = ExitCodeOK
@@ -71,9 +65,8 @@ func run(c *cli.Context) error {
 	}
 	defer termbox.Close()
 
-	Init()
-	navigationView.SetKey(listView.bucket, listView.navigator.key)
-	draw()
+	provider := NewProvider()
+	provider.Draw()
 mainloop:
 	for {
 		switch ev := termbox.PollEvent(); ev.Type {
@@ -81,8 +74,7 @@ mainloop:
 			if ev.Key == termbox.KeyEsc || ev.Ch == 'q' {
 				break mainloop
 			}
-			listView.Handle(ev)
-			navigationView.SetKey(listView.bucket, listView.navigator.key)
+			provider.Update(ev)
 
 		case termbox.EventError:
 			panic(ev.Err)
@@ -90,34 +82,7 @@ mainloop:
 		case termbox.EventInterrupt:
 			break mainloop
 		}
-		draw()
+		provider.Draw()
 	}
 	return nil
-}
-
-func draw() {
-	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	defer termbox.Flush()
-	listView.Draw()
-	navigationView.Draw()
-	statusView.Draw()
-}
-
-func Init() {
-	// Init s3 data structure
-	rootNode := NewNode("", nil, ListBuckets())
-
-	width, height := termbox.Size()
-
-	listView = &ListView{}
-	listView.navigator = rootNode
-	listView.win = newWindow(0, 1, width, height-2)
-	listView.cursorPos = newPosition(0, 0)
-	listView.drawPos = newPosition(0, 0)
-
-	navigationView = &NavigationView{}
-	navigationView.win = newWindow(0, 0, width, 1)
-
-	statusView = &StatusView{}
-	statusView.win = newWindow(0, height-1, width, 1)
 }

@@ -8,6 +8,49 @@ import (
 	termbox "github.com/nsf/termbox-go"
 )
 
+type Provider struct {
+	listView       *ListView
+	navigationView *NavigationView
+	statusView     *StatusView
+}
+
+func NewProvider() *Provider {
+	p := &Provider{}
+	p.Init()
+	return p
+}
+
+func (p *Provider) Init() {
+	// Init s3 data structure
+	rootNode := NewNode("", nil, ListBuckets())
+	width, height := termbox.Size()
+
+	p.listView = &ListView{}
+	p.listView.navigator = rootNode
+	p.listView.win = newWindow(0, 1, width, height-2)
+	p.listView.cursorPos = newPosition(0, 0)
+	p.listView.drawPos = newPosition(0, 0)
+
+	p.navigationView = &NavigationView{}
+	p.navigationView.win = newWindow(0, 0, width, 1)
+
+	p.statusView = &StatusView{}
+	p.statusView.win = newWindow(0, height-1, width, 1)
+}
+
+func (p *Provider) Update(ev termbox.Event) {
+	p.listView.Handle(ev)
+	p.navigationView.SetKey(p.listView.bucket, p.listView.navigator.key)
+}
+
+func (p *Provider) Draw() {
+	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	defer termbox.Flush()
+	p.listView.Draw()
+	p.navigationView.Draw()
+	p.statusView.Draw()
+}
+
 type Render interface {
 	Draw()
 }
@@ -200,18 +243,18 @@ func (w *ListView) down() {
 
 func (w *ListView) download(obj *S3Object) {
 	bucketName := w.bucket
-	path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
+	// path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
 	switch obj.ObjType {
 	case Bucket:
-		statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
+		// statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
 	case Dir:
-		statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
+		// statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
 	case PreDir:
-		statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
+		// statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
 	case Object:
 		DownloadObject(bucketName, obj.Name)
-		path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
-		statusView.msg = fmt.Sprintf("download complate. %s", path)
+		// path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
+		// statusView.msg = fmt.Sprintf("download complate. %s", path)
 	default:
 		log.Println("Invalid s3 object type")
 	}
