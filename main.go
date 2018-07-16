@@ -66,6 +66,7 @@ func run(c *cli.Context) error {
 	defer termbox.Close()
 
 	provider := NewProvider()
+	provider.Update()
 	provider.Draw()
 mainloop:
 	for {
@@ -74,7 +75,8 @@ mainloop:
 			if ev.Key == termbox.KeyEsc || ev.Ch == 'q' {
 				break mainloop
 			}
-			provider.Update(ev)
+			provider.Handle(ev)
+			provider.Update()
 
 		case termbox.EventError:
 			panic(ev.Err)

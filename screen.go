@@ -9,6 +9,9 @@ import (
 )
 
 type Provider struct {
+	EventHandler
+	navigator      *Node
+	bucket         string
 	listView       *ListView
 	navigationView *NavigationView
 	statusView     *StatusView
@@ -25,22 +28,27 @@ func (p *Provider) Init() {
 	rootNode := NewNode("", nil, ListBuckets())
 	width, height := termbox.Size()
 
-	p.listView = &ListView{}
-	p.listView.navigator = rootNode
-	p.listView.win = newWindow(0, 1, width, height-2)
-	p.listView.cursorPos = newPosition(0, 0)
-	p.listView.drawPos = newPosition(0, 0)
+	p.navigator = rootNode
 
-	p.navigationView = &NavigationView{}
-	p.navigationView.win = newWindow(0, 0, width, 1)
+	listView := &ListView{}
+	listView.objects = p.navigator.objects
+	listView.key = p.navigator.key
+	listView.win = newWindow(0, 1, width, height-2)
+	listView.cursorPos = newPosition(0, 0)
+	listView.drawPos = newPosition(0, 0)
+	p.listView = listView
 
-	p.statusView = &StatusView{}
-	p.statusView.win = newWindow(0, height-1, width, 1)
+	navigationView := &NavigationView{}
+	navigationView.win = newWindow(0, 0, width, 1)
+	p.navigationView = navigationView
+
+	statusView := &StatusView{}
+	statusView.win = newWindow(0, height-1, width, 1)
+	p.statusView = statusView
 }
 
-func (p *Provider) Update(ev termbox.Event) {
-	p.listView.Handle(ev)
-	p.navigationView.SetKey(p.listView.bucket, p.listView.navigator.key)
+func (p *Provider) Update() {
+	p.navigationView.SetKey(p.listView.bucket, p.navigator.key)
 }
 
 func (p *Provider) Draw() {
@@ -135,6 +143,16 @@ func (n *Node) IsBucketRoot() bool {
 	return false
 }
 
+func (n *Node) GetType() S3ListType {
+	if n.IsRoot() {
+		return BucketList
+	}
+	if n.IsBucketRoot() {
+		return BucketRootList
+	}
+	return ObjectList
+}
+
 func (n *Node) IsExistChildren(key string) bool {
 	_, ok := n.children[key]
 	return ok
@@ -148,10 +166,21 @@ func (n *Node) AddChild(key string, node *Node) {
 	n.children[key] = node
 }
 
+type S3ListType int
+
+const (
+	BucketList S3ListType = iota //0
+	BucketRootList
+	ObjectList
+)
+
 type ListView struct {
 	Render
-	EventHandler
-	navigator *Node
+	// EventHandler
+	// navigator *Node
+	key       string
+	listType  S3ListType
+	objects   []*S3Object
 	bucket    string
 	win       *Window
 	cursorPos *Position
@@ -159,10 +188,10 @@ type ListView struct {
 }
 
 func (w *ListView) Draw() {
-	for i, obj := range w.navigator.objects {
+	for i, obj := range w.objects {
 		drawStr := obj.Name
-		if w.navigator.parent == nil || !w.navigator.parent.IsRoot() {
-			drawStr = strings.TrimPrefix(obj.Name, w.navigator.key)
+		if w.listType == ObjectList {
+			drawStr = strings.TrimPrefix(obj.Name, w.key)
 		}
 
 		if i >= w.drawPos.Y {
@@ -199,11 +228,22 @@ func (w *ListView) getCursorY() int {
 	return w.win.DrawY(w.cursorPos.Y) - w.drawPos.Y
 }
 
-func (w *ListView) Handle(ev termbox.Event) {
+func (w *ListView) getCursorObject() *S3Object {
+	return w.objects[w.cursorPos.Y]
+}
+
+func (w *ListView) updateList(node *Node) {
+	w.cursorPos.Y = node.position
+	w.objects = node.objects
+	w.key = node.key
+	w.listType = node.GetType()
+}
+
+func (w *Provider) Handle(ev termbox.Event) {
 	if ev.Ch == 'j' {
-		w.down()
+		w.navigator.position = w.listView.down()
 	} else if ev.Ch == 'k' {
-		w.up()
+		w.navigator.position = w.listView.up()
 	} else if ev.Ch == 'h' {
 		if !w.navigator.IsRoot() {
 			w.loadPrev()
@@ -211,70 +251,75 @@ func (w *ListView) Handle(ev termbox.Event) {
 	} else if ev.Ch == 'r' {
 		w.reload()
 	} else if ev.Ch == 'w' {
-		obj := w.navigator.objects[w.cursorPos.Y]
-		w.download(obj)
+		w.download()
 	} else if ev.Ch == 'l' || ev.Key == termbox.KeyEnter {
-		obj := w.navigator.objects[w.cursorPos.Y]
+		obj := w.listView.getCursorObject()
 		w.open(obj)
 	}
 }
 
-func (w *ListView) up() {
+func (w *ListView) up() int {
 	if w.cursorPos.Y > 0 {
 		w.cursorPos.Y--
-		w.navigator.position = w.cursorPos.Y
+		// w.navigator.position = w.cursorPos.Y
 	}
 	if w.cursorPos.Y < w.drawPos.Y {
 		w.drawPos.Y = w.cursorPos.Y
 	}
 	log.Printf("Up. CursorPosition:%d, DrawPosition:%d", w.cursorPos.Y, w.drawPos.Y)
+	return w.cursorPos.Y
 }
 
-func (w *ListView) down() {
-	if w.cursorPos.Y < (len(w.navigator.objects) - 1) {
+func (w *ListView) down() int {
+	if w.cursorPos.Y < (len(w.objects) - 1) {
 		w.cursorPos.Y++
-		w.navigator.position = w.cursorPos.Y
+		// w.navigator.position = w.cursorPos.Y
 	}
 	if w.cursorPos.Y > (w.drawPos.Y + w.win.Box.Height - 1) {
 		w.drawPos.Y = w.cursorPos.Y - w.win.Box.Height + 1
 	}
 	log.Printf("Down. CursorPosition:%d, DrawPosition:%d", w.cursorPos.Y, w.drawPos.Y)
+	return w.cursorPos.Y
 }
 
-func (w *ListView) download(obj *S3Object) {
+func (w *Provider) download() {
+	obj := w.listView.getCursorObject()
 	bucketName := w.bucket
-	// path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
+	path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
 	switch obj.ObjType {
 	case Bucket:
-		// statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
+		w.statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
 	case Dir:
-		// statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
+		w.statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
 	case PreDir:
-		// statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
+		w.statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
 	case Object:
 		DownloadObject(bucketName, obj.Name)
-		// path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
-		// statusView.msg = fmt.Sprintf("download complate. %s", path)
+		path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
+		w.statusView.msg = fmt.Sprintf("download complate. %s", path)
 	default:
 		log.Println("Invalid s3 object type")
 	}
 }
 
-func (w *ListView) reload() {
+func (w *Provider) reload() {
 	if w.navigator.IsRoot() {
 		w.navigator.objects = ListBuckets()
+		w.listView.objects = w.navigator.objects
 		return
 	}
 
-	if !w.navigator.parent.IsBucketRoot() {
+	if w.navigator.IsBucketRoot() {
 		w.navigator.objects = ListObjects(w.bucket, "")
+		w.listView.objects = w.navigator.objects
 		return
 	}
 
 	w.navigator.objects = ListObjects(w.bucket, w.navigator.key)
+	w.listView.objects = w.navigator.objects
 }
 
-func (w *ListView) open(obj *S3Object) {
+func (w *Provider) open(obj *S3Object) {
 	switch obj.ObjType {
 	case Bucket:
 		bucketName := obj.Name
@@ -302,27 +347,27 @@ func (w *ListView) open(obj *S3Object) {
 	}
 }
 
-func (w *ListView) moveNext(key string) {
+func (w *Provider) moveNext(key string) {
 	child := w.navigator.GetChild(key)
 	w.navigator = child
-	w.cursorPos.Y = child.position
+	w.listView.updateList(child)
 	log.Printf("Move next. child:%s", child.key)
 }
 
-func (w *ListView) loadNext(key string, objects []*S3Object) {
+func (w *Provider) loadNext(key string, objects []*S3Object) {
 	parent := w.navigator
 	child := NewNode(key, parent, objects)
 	parent.AddChild(key, child)
 	w.navigator = child
-	w.cursorPos.Y = child.position
+	w.listView.updateList(child)
 	log.Printf("Load next. parent:%s, child:%s", parent.key, child.key)
 }
 
-func (w *ListView) loadPrev() {
+func (w *Provider) loadPrev() {
 	parent := w.navigator.parent
 	w.navigator = parent
-	w.cursorPos.Y = parent.position
 	w.bucket = ""
+	w.listView.updateList(parent)
 	log.Printf("Load prev. parent:%s", parent.key)
 }
 
