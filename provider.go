@@ -215,13 +215,13 @@ func (p *Provider) listEvent(ev termbox.Event) {
 			time.Sleep(1 * time.Second)
 			panic("this should never run")
 		}()
-	} else if ev.Ch == 'j' {
+	} else if ev.Ch == 'j' || ev.Key == termbox.KeyArrowDown || ev.Key == termbox.KeyCtrlN {
 		p.navigator.position = p.listView.down()
-	} else if ev.Ch == 'k' {
+	} else if ev.Ch == 'k' || ev.Key == termbox.KeyArrowUp || ev.Key == termbox.KeyCtrlP {
 		p.navigator.position = p.listView.up()
 	} else if ev.Ch == 'm' {
 		p.menu()
-	} else if ev.Ch == 'h' {
+	} else if ev.Ch == 'h' || ev.Key == termbox.KeyArrowLeft {
 		if !p.navigator.IsRoot() {
 			p.loadPrev()
 		}
@@ -229,16 +229,16 @@ func (p *Provider) listEvent(ev termbox.Event) {
 		p.reload()
 	} else if ev.Ch == 'w' {
 		p.download()
-	} else if ev.Ch == 'l' || ev.Key == termbox.KeyEnter {
+	} else if ev.Ch == 'l' || ev.Key == termbox.KeyArrowRight || ev.Key == termbox.KeyEnter {
 		obj := p.listView.getCursorObject()
 		p.open(obj)
 	}
 }
 
 func (p *Provider) menuEvent(ev termbox.Event) {
-	if ev.Ch == 'j' {
+	if ev.Ch == 'j' || ev.Key == termbox.KeyArrowDown || ev.Key == termbox.KeyCtrlN {
 		p.menuView.down()
-	} else if ev.Ch == 'k' {
+	} else if ev.Ch == 'k' || ev.Key == termbox.KeyArrowUp || ev.Key == termbox.KeyCtrlP {
 		p.menuView.up()
 	} else if ev.Ch == 'q' {
 		p.status = StateList
