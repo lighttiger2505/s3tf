@@ -200,13 +200,21 @@ type MenuView struct {
 }
 
 func (v *MenuView) Draw() {
+	// Draw backgroud color
+	for i := 0; i < v.win.Box.Height; i++ {
+		drawStr := PadRight("", v.win.Box.Width, " ")
+		drawY := v.win.DrawY(i) - v.drawPos.Y
+		fg := termbox.ColorDefault
+		bg := termbox.ColorDefault
+		tbPrint(0, drawY, fg, bg, drawStr)
+	}
+	// Draw menu command item
 	for i, item := range v.items {
-		drawStr := item.toString()
 		if i >= v.drawPos.Y {
+			drawStr := PadRight(item.toString(), v.win.Box.Width, " ")
 			drawY := v.win.DrawY(i) - v.drawPos.Y
 			var fg, bg termbox.Attribute
 			if drawY == v.getCursorY() {
-				drawStr = PadRight(drawStr, v.win.Box.Width, " ")
 				fg = termbox.ColorWhite
 				bg = termbox.ColorGreen
 			} else {
