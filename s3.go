@@ -28,11 +28,10 @@ func ListBuckets() []*S3Object {
 	result, err := client.ListBucketsWithContext(ctx, &s3.ListBucketsInput{})
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == request.CanceledErrorCode {
-			log.Printf("upload canceled due to timeout, %v", err)
+			log.Fatalf("list buckets canceled due to timeout, %v", err)
 		} else {
-			log.Printf("failed to upload object, %v", err)
+			log.Fatalf("failed list buckets, %v", err)
 		}
-		os.Exit(1)
 	}
 
 	var objects []*S3Object
@@ -62,11 +61,10 @@ func ListObjects(bucket, prefix string) []*S3Object {
 	})
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == request.CanceledErrorCode {
-			log.Printf("upload canceled due to timeout, %v", err)
+			log.Fatalf("list objects canceled due to timeout, %v", err)
 		} else {
-			log.Printf("failed to upload object, %v", err)
+			log.Fatalf("failed list objects, %v", err)
 		}
-		os.Exit(1)
 	}
 
 	var objects []*S3Object
@@ -110,7 +108,7 @@ func DownloadObject(bucket, key string) {
 	currentDir, _ := os.Getwd()
 	f, err := os.Create(filepath.Join(currentDir, key))
 	if err != nil {
-		log.Fatalf("donwload file create failed, %v", err)
+		log.Fatalf("failed create donwload reader, %v", err)
 	}
 	defer f.Close()
 
@@ -120,13 +118,11 @@ func DownloadObject(bucket, key string) {
 	})
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == request.CanceledErrorCode {
-			log.Printf("upload canceled due to timeout, %v", err)
+			log.Fatalf("download canceled due to timeout, %v", err)
 		} else {
-			log.Printf("failed to upload object, %v", err)
+			log.Fatalf("failed download, %v", err)
 		}
-		os.Exit(1)
 	}
-	log.Printf("download success, %v", n)
 }
 
 func getS3Downloader() *s3manager.Downloader {
