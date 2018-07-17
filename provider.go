@@ -70,7 +70,11 @@ func (p *Provider) Init() {
 	for i := 0; i < 100; i++ {
 		msgs = append(msgs, strconv.Itoa(i))
 	}
-	menuView.msgs = msgs
+	menuView.items = []*MenuItem{
+		NewMenuItem("download", "d", "download file.", CommandDownload),
+		NewMenuItem("edit", "e", "open editor by file.", CommandDownload),
+		NewMenuItem("open", "d", "open file.", CommandDownload),
+	}
 	menuView.win = newWindow(0, height-20-1, width, 20)
 	menuView.cursorPos = newPosition(0, 0)
 	menuView.drawPos = newPosition(0, 0)

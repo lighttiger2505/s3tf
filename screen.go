@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -162,17 +163,45 @@ func (v *StatusView) Draw() {
 	tbPrint(0, v.win.DrawY(0), termbox.ColorWhite, termbox.ColorBlue, str)
 }
 
+type MenuCommand int
+
+const (
+	CommandDownload MenuCommand = iota //0
+	CommandEdit
+	CommandOpen
+)
+
+type MenuItem struct {
+	name      string
+	shorthand string
+	detail    string
+	command   MenuCommand
+}
+
+func NewMenuItem(name, shorthand, detail string, command MenuCommand) *MenuItem {
+	return &MenuItem{
+		name:      name,
+		shorthand: shorthand,
+		detail:    detail,
+		command:   command,
+	}
+}
+
+func (i *MenuItem) toString() string {
+	return fmt.Sprintf("(%s)%s %s", i.shorthand, i.name, i.detail)
+}
+
 type MenuView struct {
 	Render
-	msgs      []string
+	items     []*MenuItem
 	win       *Window
 	cursorPos *Position
 	drawPos   *Position
 }
 
 func (v *MenuView) Draw() {
-	for i, msg := range v.msgs {
-		drawStr := msg
+	for i, item := range v.items {
+		drawStr := item.toString()
 		if i >= v.drawPos.Y {
 			drawY := v.win.DrawY(i) - v.drawPos.Y
 			var fg, bg termbox.Attribute
@@ -205,7 +234,7 @@ func (v *MenuView) up() int {
 }
 
 func (v *MenuView) down() int {
-	if v.cursorPos.Y < (len(v.msgs) - 1) {
+	if v.cursorPos.Y < (len(v.items) - 1) {
 		v.cursorPos.Y++
 	}
 	if v.cursorPos.Y > (v.drawPos.Y + v.win.Box.Height - 1) {
