@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	termbox "github.com/nsf/termbox-go"
@@ -12,13 +13,22 @@ type EventHandler interface {
 	Handle(termbox.Event)
 }
 
+type ProviderStatus int
+
+const (
+	StateList ProviderStatus = iota //0
+	StateMenu
+)
+
 type Provider struct {
 	EventHandler
+	status         ProviderStatus
 	navigator      *Node
 	bucket         string
 	listView       *ListView
 	navigationView *NavigationView
 	statusView     *StatusView
+	menuView       *MenuView
 }
 
 func NewProvider() *Provider {
@@ -32,6 +42,7 @@ func (p *Provider) Init() {
 	rootNode := NewNode("", nil, ListBuckets())
 	width, height := termbox.Size()
 
+	p.status = StateList
 	p.navigator = rootNode
 
 	listView := &ListView{}
@@ -49,10 +60,21 @@ func (p *Provider) Init() {
 	statusView := &StatusView{}
 	statusView.win = newWindow(0, height-1, width, 1)
 	p.statusView = statusView
+
+	menuView := &MenuView{}
+	msgs := []string{}
+	for i := 0; i < 100; i++ {
+		msgs = append(msgs, strconv.Itoa(i))
+	}
+	menuView.msgs = msgs
+	menuView.win = newWindow(0, height-20-1, width, 20)
+	menuView.cursorPos = newPosition(0, 0)
+	menuView.drawPos = newPosition(0, 0)
+	p.menuView = menuView
 }
 
 func (p *Provider) Update() {
-	p.navigationView.SetKey(p.listView.bucket, p.navigator.key)
+	p.navigationView.SetKey(p.bucket, p.navigator.key)
 }
 
 func (p *Provider) Draw() {
@@ -60,6 +82,9 @@ func (p *Provider) Draw() {
 	defer termbox.Flush()
 	p.listView.Draw()
 	p.navigationView.Draw()
+	if p.status == StateMenu {
+		p.menuView.Draw()
+	}
 	p.statusView.Draw()
 }
 
@@ -152,11 +177,26 @@ func (p *Provider) loadPrev() {
 	log.Printf("Load prev. parent:%s", parent.key)
 }
 
+func (p *Provider) menu() {
+	p.status = StateMenu
+}
+
 func (p *Provider) Handle(ev termbox.Event) {
+	switch p.status {
+	case StateList:
+		p.listEvent(ev)
+	case StateMenu:
+		p.menuEvent(ev)
+	}
+}
+
+func (p *Provider) listEvent(ev termbox.Event) {
 	if ev.Ch == 'j' {
 		p.navigator.position = p.listView.down()
 	} else if ev.Ch == 'k' {
 		p.navigator.position = p.listView.up()
+	} else if ev.Ch == 'm' {
+		p.menu()
 	} else if ev.Ch == 'h' {
 		if !p.navigator.IsRoot() {
 			p.loadPrev()
@@ -168,6 +208,16 @@ func (p *Provider) Handle(ev termbox.Event) {
 	} else if ev.Ch == 'l' || ev.Key == termbox.KeyEnter {
 		obj := p.listView.getCursorObject()
 		p.open(obj)
+	}
+}
+
+func (p *Provider) menuEvent(ev termbox.Event) {
+	if ev.Ch == 'j' {
+		p.menuView.down()
+	} else if ev.Ch == 'k' {
+		p.menuView.up()
+	} else if ev.Ch == 'm' {
+		p.status = StateList
 	}
 }
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"strings"
 
@@ -63,7 +62,6 @@ type ListView struct {
 	key       string
 	listType  S3ListType
 	objects   []*S3Object
-	bucket    string
 	win       *Window
 	cursorPos *Position
 	drawPos   *Position
@@ -162,4 +160,57 @@ type StatusView struct {
 func (v *StatusView) Draw() {
 	str := PadRight(v.msg, v.win.Box.Width, " ")
 	tbPrint(0, v.win.DrawY(0), termbox.ColorWhite, termbox.ColorBlue, str)
+}
+
+type MenuView struct {
+	Render
+	msgs      []string
+	win       *Window
+	cursorPos *Position
+	drawPos   *Position
+}
+
+func (v *MenuView) Draw() {
+	for i, msg := range v.msgs {
+		drawStr := msg
+		if i >= v.drawPos.Y {
+			drawY := v.win.DrawY(i) - v.drawPos.Y
+			var fg, bg termbox.Attribute
+			if drawY == v.getCursorY() {
+				drawStr = PadRight(drawStr, v.win.Box.Width, " ")
+				fg = termbox.ColorWhite
+				bg = termbox.ColorGreen
+			} else {
+				fg = termbox.ColorDefault
+				bg = termbox.ColorDefault
+			}
+			tbPrint(0, drawY, fg, bg, drawStr)
+		}
+	}
+}
+
+func (v *MenuView) getCursorY() int {
+	return v.win.DrawY(v.cursorPos.Y) - v.drawPos.Y
+}
+
+func (v *MenuView) up() int {
+	if v.cursorPos.Y > 0 {
+		v.cursorPos.Y--
+	}
+	if v.cursorPos.Y < v.drawPos.Y {
+		v.drawPos.Y = v.cursorPos.Y
+	}
+	log.Printf("Up. CursorPosition:%d, DrawPosition:%d", v.cursorPos.Y, v.drawPos.Y)
+	return v.cursorPos.Y
+}
+
+func (v *MenuView) down() int {
+	if v.cursorPos.Y < (len(v.msgs) - 1) {
+		v.cursorPos.Y++
+	}
+	if v.cursorPos.Y > (v.drawPos.Y + v.win.Box.Height - 1) {
+		v.drawPos.Y = v.cursorPos.Y - v.win.Box.Height + 1
+	}
+	log.Printf("Down. CursorPosition:%d, DrawPosition:%d", v.cursorPos.Y, v.drawPos.Y)
+	return v.cursorPos.Y
 }
