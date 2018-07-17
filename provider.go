@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 
 	termbox "github.com/nsf/termbox-go"
 )
@@ -22,6 +23,7 @@ const (
 
 type Provider struct {
 	EventHandler
+	quitChan       chan struct{}
 	status         ProviderStatus
 	navigator      *Node
 	bucket         string
@@ -34,6 +36,8 @@ type Provider struct {
 func NewProvider() *Provider {
 	p := &Provider{}
 	p.Init()
+	p.Update()
+	p.Draw()
 	return p
 }
 
@@ -71,6 +75,21 @@ func (p *Provider) Init() {
 	menuView.cursorPos = newPosition(0, 0)
 	menuView.drawPos = newPosition(0, 0)
 	p.menuView = menuView
+}
+
+func (p *Provider) Loop() {
+	for {
+		switch ev := termbox.PollEvent(); ev.Type {
+		case termbox.EventKey:
+			p.Handle(ev)
+			p.Update()
+		case termbox.EventError:
+			panic(ev.Err)
+		case termbox.EventInterrupt:
+			return
+		}
+		p.Draw()
+	}
 }
 
 func (p *Provider) Update() {
@@ -191,7 +210,13 @@ func (p *Provider) Handle(ev termbox.Event) {
 }
 
 func (p *Provider) listEvent(ev termbox.Event) {
-	if ev.Ch == 'j' {
+	if ev.Key == termbox.KeyEsc || ev.Ch == 'q' {
+		go func() {
+			termbox.Interrupt()
+			time.Sleep(1 * time.Second)
+			panic("this should never run")
+		}()
+	} else if ev.Ch == 'j' {
 		p.navigator.position = p.listView.down()
 	} else if ev.Ch == 'k' {
 		p.navigator.position = p.listView.up()
@@ -216,7 +241,7 @@ func (p *Provider) menuEvent(ev termbox.Event) {
 		p.menuView.down()
 	} else if ev.Ch == 'k' {
 		p.menuView.up()
-	} else if ev.Ch == 'm' {
+	} else if ev.Ch == 'q' {
 		p.status = StateList
 	}
 }
