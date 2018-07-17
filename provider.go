@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -152,7 +153,38 @@ func (p *Provider) reload() {
 	p.listView.objects = p.navigator.objects
 }
 
-func (p *Provider) open(obj *S3Object) {
+func (p *Provider) open() {
+	obj := p.listView.getCursorObject()
+	bucketName := p.bucket
+	path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
+	switch obj.ObjType {
+	case Bucket:
+		p.statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
+	case Dir:
+		p.statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
+	case PreDir:
+		p.statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
+	case Object:
+		tempDir, _ := ioutil.TempDir("", "")
+		f, err := os.Create(filepath.Join(tempDir, obj.Name))
+		if err != nil {
+			log.Fatalf("failed create donwload reader, %v", err)
+		}
+		defer f.Close()
+
+		DownloadObject(bucketName, obj.Name, f)
+		if err := Open(f.Name()); err != nil {
+			log.Fatalf("failed open file, %v", err)
+		}
+
+		path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
+		p.statusView.msg = fmt.Sprintf("open. %s", path)
+	default:
+		log.Println("Invalid s3 object type")
+	}
+}
+
+func (p *Provider) show(obj *S3Object) {
 	switch obj.ObjType {
 	case Bucket:
 		bucketName := obj.Name
@@ -236,11 +268,13 @@ func (p *Provider) listEvent(ev termbox.Event) {
 		}
 	} else if ev.Ch == 'r' {
 		p.reload()
+	} else if ev.Ch == 'o' {
+		p.open()
 	} else if ev.Ch == 'w' {
 		p.download()
 	} else if ev.Ch == 'l' || ev.Key == termbox.KeyArrowRight || ev.Key == termbox.KeyEnter {
 		obj := p.listView.getCursorObject()
-		p.open(obj)
+		p.show(obj)
 	}
 }
 
