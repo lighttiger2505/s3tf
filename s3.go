@@ -2,9 +2,8 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -98,21 +97,14 @@ func ListObjects(bucket, prefix string) []*S3Object {
 	return objects
 }
 
-func DownloadObject(bucket, key string) {
+func DownloadObject(bucket, key string, file io.WriterAt) {
 	client := getS3Downloader()
 
 	ctx := context.Background()
 	ctx, cancelFn := context.WithTimeout(ctx, RequestTimeout)
 	defer cancelFn()
 
-	currentDir, _ := os.Getwd()
-	f, err := os.Create(filepath.Join(currentDir, key))
-	if err != nil {
-		log.Fatalf("failed create donwload reader, %v", err)
-	}
-	defer f.Close()
-
-	n, err := client.DownloadWithContext(ctx, f, &s3.GetObjectInput{
+	_, err := client.DownloadWithContext(ctx, file, &s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
 	})

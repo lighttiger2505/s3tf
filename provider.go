@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -118,7 +120,14 @@ func (p *Provider) download() {
 	case PreDir:
 		p.statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
 	case Object:
-		DownloadObject(bucketName, obj.Name)
+		currentDir, _ := os.Getwd()
+		f, err := os.Create(filepath.Join(currentDir, obj.Name))
+		if err != nil {
+			log.Fatalf("failed create donwload reader, %v", err)
+		}
+		defer f.Close()
+
+		DownloadObject(bucketName, obj.Name, f)
 		path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
 		p.statusView.msg = fmt.Sprintf("download complate. %s", path)
 	default:
