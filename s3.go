@@ -16,14 +16,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
+const RequestTimeout time.Duration = time.Second * 30
+
 func ListBuckets() []*S3Object {
 	client := getS3Client()
+
 	ctx := context.Background()
-	timeout := time.Second * 30
-	var cancelFn func()
-	if timeout > 0 {
-		ctx, cancelFn = context.WithTimeout(ctx, timeout)
-	}
+	ctx, cancelFn := context.WithTimeout(ctx, RequestTimeout)
 	defer cancelFn()
 
 	result, err := client.ListBucketsWithContext(ctx, &s3.ListBucketsInput{})
@@ -51,12 +50,9 @@ func ListBuckets() []*S3Object {
 
 func ListObjects(bucket, prefix string) []*S3Object {
 	client := getS3Client()
+
 	ctx := context.Background()
-	timeout := time.Second * 30
-	var cancelFn func()
-	if timeout > 0 {
-		ctx, cancelFn = context.WithTimeout(ctx, timeout)
-	}
+	ctx, cancelFn := context.WithTimeout(ctx, RequestTimeout)
 	defer cancelFn()
 
 	result, err := client.ListObjectsWithContext(ctx, &s3.ListObjectsInput{
@@ -106,12 +102,9 @@ func ListObjects(bucket, prefix string) []*S3Object {
 
 func DownloadObject(bucket, key string) {
 	client := getS3Downloader()
+
 	ctx := context.Background()
-	timeout := time.Second * 30
-	var cancelFn func()
-	if timeout > 0 {
-		ctx, cancelFn = context.WithTimeout(ctx, timeout)
-	}
+	ctx, cancelFn := context.WithTimeout(ctx, RequestTimeout)
 	defer cancelFn()
 
 	currentDir, _ := os.Getwd()
