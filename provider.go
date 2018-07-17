@@ -242,6 +242,13 @@ func (p *Provider) menuEvent(ev termbox.Event) {
 		p.menuView.up()
 	} else if ev.Ch == 'q' {
 		p.status = StateList
+	} else if ev.Key == termbox.KeyEnter {
+		item := p.menuView.getCursorItem()
+		switch item.command {
+		case CommandDownload:
+			p.download()
+		}
+		p.status = StateList
 	}
 }
 

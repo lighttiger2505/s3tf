@@ -222,6 +222,10 @@ func (v *MenuView) getCursorY() int {
 	return v.win.DrawY(v.cursorPos.Y) - v.drawPos.Y
 }
 
+func (v *MenuView) getCursorItem() *MenuItem {
+	return v.items[v.cursorPos.Y]
+}
+
 func (v *MenuView) up() int {
 	if v.cursorPos.Y > 0 {
 		v.cursorPos.Y--
