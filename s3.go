@@ -16,31 +16,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
-type S3ObjectType int
-
-const (
-	Bucket S3ObjectType = iota //0
-	Dir
-	PreDir
-	Object
-)
-
-type S3Object struct {
-	ObjType S3ObjectType
-	Name    string
-	Date    *time.Time
-	Size    *int64
-}
-
-func NewS3Object(objType S3ObjectType, name string, date *time.Time, size *int64) *S3Object {
-	return &S3Object{
-		ObjType: objType,
-		Name:    name,
-		Date:    date,
-		Size:    size,
-	}
-}
-
 func ListBuckets() []*S3Object {
 	client := getS3Client()
 	ctx := context.Background()
