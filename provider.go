@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 	"time"
 
@@ -66,10 +65,6 @@ func (p *Provider) Init() {
 	p.statusView = statusView
 
 	menuView := &MenuView{}
-	msgs := []string{}
-	for i := 0; i < 100; i++ {
-		msgs = append(msgs, strconv.Itoa(i))
-	}
 	menuView.items = []*MenuItem{
 		NewMenuItem("download", "d", "download file.", CommandDownload),
 		NewMenuItem("edit", "e", "open editor by file.", CommandDownload),
