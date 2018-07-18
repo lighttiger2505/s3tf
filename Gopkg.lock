@@ -60,6 +60,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/mitchellh/go-homedir"
+  packages = ["."]
+  revision = "3864e76763d94a6df2f9960b16a20a33da9f9a66"
+
+[[projects]]
+  branch = "master"
   name = "github.com/nsf/termbox-go"
   packages = ["."]
   revision = "5c94acc5e6eb520f1bcd183974e01171cc4c23b3"
@@ -73,6 +79,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "70ce02478097ad03e0ec14049fd0b13747b4b130abf91449de23b5727e815865"
+  inputs-digest = "ffd30629ec71f9adb28d6f8922dcb6c60005dbe541cbc8d915921640686ba866"
   solver-name = "gps-cdcl"
   solver-version = 1

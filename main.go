@@ -5,7 +5,9 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/nsf/termbox-go"
 	"github.com/urfave/cli"
 )
@@ -48,9 +50,21 @@ var (
 	mockFlag bool
 )
 
+func isFileExist(fPath string) bool {
+	_, err := os.Stat(fPath)
+	return err == nil || !os.IsNotExist(err)
+}
+
 func run(c *cli.Context) error {
 	// Init logging setting
-	logfile, err := os.OpenFile("./debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	home, _ := homedir.Dir()
+	configdir := filepath.Join(home, ".config", "s3tf")
+	if !isFileExist(configdir) {
+		os.Mkdir(configdir, os.FileMode(0755))
+	}
+
+	logpath := filepath.Join(configdir, "debug.log")
+	logfile, err := os.OpenFile(logpath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		panic("cannnot open test.log:" + err.Error())
 	}
