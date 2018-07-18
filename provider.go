@@ -122,7 +122,7 @@ func (p *Provider) download() {
 		p.statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
 	case Object:
 		currentDir, _ := os.Getwd()
-		f, err := os.Create(filepath.Join(currentDir, obj.Name))
+		f, err := os.Create(filepath.Join(currentDir, Filename(obj.Name)))
 		if err != nil {
 			log.Fatalf("failed create donwload reader, %v", err)
 		}
@@ -166,7 +166,7 @@ func (p *Provider) open() {
 		p.statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
 	case Object:
 		tempDir, _ := ioutil.TempDir("", "")
-		f, err := os.Create(filepath.Join(tempDir, obj.Name))
+		f, err := os.Create(filepath.Join(tempDir, Filename(obj.Name)))
 		if err != nil {
 			log.Fatalf("failed create donwload reader, %v", err)
 		}

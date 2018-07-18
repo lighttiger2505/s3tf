@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type S3ObjectType int
 
@@ -86,4 +89,9 @@ func (n *Node) GetChild(key string) *Node {
 
 func (n *Node) AddChild(key string, node *Node) {
 	n.children[key] = node
+}
+
+func Filename(path string) string {
+	sp := strings.Split(path, "/")
+	return sp[len(sp)-1]
 }
