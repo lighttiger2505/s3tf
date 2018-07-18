@@ -69,9 +69,9 @@ func (p *Provider) Init() {
 
 	menuView := &MenuView{}
 	menuView.items = []*MenuItem{
-		NewMenuItem("download", "d", "download file.", CommandDownload),
-		NewMenuItem("edit", "e", "open editor by file.", CommandDownload),
-		NewMenuItem("open", "d", "open file.", CommandDownload),
+		NewMenuItem("download", "w", "download file.", CommandDownload),
+		NewMenuItem("open", "o", "open file.", CommandOpen),
+		NewMenuItem("edit", "e", "open editor by file.", CommandEdit),
 	}
 	menuView.win = newWindow(0, height-20-1, width, 20)
 	menuView.cursorPos = newPosition(0, 0)
@@ -109,33 +109,6 @@ func (p *Provider) Draw() {
 	p.statusView.Draw()
 }
 
-func (p *Provider) download() {
-	obj := p.listView.getCursorObject()
-	bucketName := p.bucket
-	path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
-	switch obj.ObjType {
-	case Bucket:
-		p.statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
-	case Dir:
-		p.statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
-	case PreDir:
-		p.statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
-	case Object:
-		currentDir, _ := os.Getwd()
-		f, err := os.Create(filepath.Join(currentDir, Filename(obj.Name)))
-		if err != nil {
-			log.Fatalf("failed create donwload reader, %v", err)
-		}
-		defer f.Close()
-
-		DownloadObject(bucketName, obj.Name, f)
-		path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
-		p.statusView.msg = fmt.Sprintf("download complate. %s", path)
-	default:
-		log.Println("Invalid s3 object type")
-	}
-}
-
 func (p *Provider) reload() {
 	if p.navigator.IsRoot() {
 		p.navigator.objects = ListBuckets()
@@ -153,17 +126,30 @@ func (p *Provider) reload() {
 	p.listView.objects = p.navigator.objects
 }
 
+func (p *Provider) download() {
+	obj := p.listView.getCursorObject()
+	bucketName := p.bucket
+	switch obj.ObjType {
+	case Object:
+		currentDir, _ := os.Getwd()
+		f, err := os.Create(filepath.Join(currentDir, Filename(obj.Name)))
+		if err != nil {
+			log.Fatalf("failed create donwload reader, %v", err)
+		}
+		defer f.Close()
+
+		DownloadObject(bucketName, obj.Name, f)
+		path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
+		p.statusView.msg = fmt.Sprintf("download complate. %s", path)
+	default:
+		log.Println("Invalid s3 object type")
+	}
+}
+
 func (p *Provider) open() {
 	obj := p.listView.getCursorObject()
 	bucketName := p.bucket
-	path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
 	switch obj.ObjType {
-	case Bucket:
-		p.statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
-	case Dir:
-		p.statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
-	case PreDir:
-		p.statusView.msg = fmt.Sprintf("%s is can't download. download command is file only", path)
 	case Object:
 		tempDir, _ := ioutil.TempDir("", "")
 		f, err := os.Create(filepath.Join(tempDir, Filename(obj.Name)))
@@ -179,6 +165,31 @@ func (p *Provider) open() {
 
 		path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
 		p.statusView.msg = fmt.Sprintf("open. %s", path)
+	default:
+		log.Println("Invalid s3 object type")
+	}
+}
+
+func (p *Provider) edit() {
+	obj := p.listView.getCursorObject()
+	bucketName := p.bucket
+	switch obj.ObjType {
+	case Object:
+		tempDir, _ := ioutil.TempDir("", "")
+		f, err := os.Create(filepath.Join(tempDir, Filename(obj.Name)))
+		if err != nil {
+			log.Fatalf("failed create donwload reader, %v", err)
+		}
+		DownloadObject(bucketName, obj.Name, f)
+		editFilePath := f.Name()
+		f.Close()
+
+		termbox.Close()
+		defer termbox.Init()
+		OpenEditor(editFilePath)
+
+		path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
+		p.statusView.msg = fmt.Sprintf("edit. %s", path)
 	default:
 		log.Println("Invalid s3 object type")
 	}
@@ -268,10 +279,12 @@ func (p *Provider) listEvent(ev termbox.Event) {
 		}
 	} else if ev.Ch == 'r' {
 		p.reload()
-	} else if ev.Ch == 'o' {
-		p.open()
 	} else if ev.Ch == 'w' {
 		p.download()
+	} else if ev.Ch == 'o' {
+		p.open()
+	} else if ev.Ch == 'e' {
+		p.edit()
 	} else if ev.Ch == 'l' || ev.Key == termbox.KeyArrowRight || ev.Key == termbox.KeyEnter {
 		obj := p.listView.getCursorObject()
 		p.show(obj)
@@ -290,6 +303,10 @@ func (p *Provider) menuEvent(ev termbox.Event) {
 		switch item.command {
 		case CommandDownload:
 			p.download()
+		case CommandOpen:
+			p.open()
+		case CommandEdit:
+			p.edit()
 		}
 		p.status = StateList
 	}

@@ -167,8 +167,8 @@ type MenuCommand int
 
 const (
 	CommandDownload MenuCommand = iota //0
-	CommandEdit
 	CommandOpen
+	CommandEdit
 )
 
 type MenuItem struct {
