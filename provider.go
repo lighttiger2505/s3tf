@@ -83,9 +83,7 @@ func (p *Provider) Init() {
 	p.menuView = menuView
 
 	detailView := &DetailView{}
-	detailView.win = newWindow(halfWidth, 1, width-halfWidth, height-2)
-	detailView.cursorPos = newPosition(0, 0)
-	detailView.drawPos = newPosition(0, 0)
+	detailView.layer = NewLayer(halfWidth, 1, width-halfWidth, height-2)
 	p.detailView = detailView
 }
 
