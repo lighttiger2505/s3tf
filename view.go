@@ -203,7 +203,7 @@ func (v *MenuView) Draw() {
 	// Draw backgroud color
 	for i := 0; i < v.win.Box.Height; i++ {
 		drawStr := PadRight("", v.win.Box.Width, " ")
-		drawY := v.win.DrawY(i) - v.drawPos.Y
+		drawY := v.win.DrawY(i)
 		fg := termbox.ColorDefault
 		bg := termbox.ColorDefault
 		tbPrint(0, drawY, fg, bg, drawStr)
@@ -314,7 +314,7 @@ func (v *DetailView) Draw() {
 	for i := 0; i < v.win.Box.Height; i++ {
 		drawStr := PadRight("", v.win.Box.Width, " ")
 		drawX := v.win.DrawX(0)
-		drawY := v.win.DrawY(i) - v.drawPos.Y
+		drawY := v.win.DrawY(i)
 		fg := termbox.ColorDefault
 		bg := termbox.ColorDefault
 		tbPrint(drawX, drawY, fg, bg, drawStr)

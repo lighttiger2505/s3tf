@@ -49,6 +49,8 @@ func (p *Provider) Init() {
 	// Init s3 data structure
 	rootNode := NewNode("", nil, ListBuckets())
 	width, height := termbox.Size()
+	halfWidth := width / 2
+	halfHeight := height / 2
 
 	p.status = StateList
 	p.navigator = rootNode
@@ -75,13 +77,13 @@ func (p *Provider) Init() {
 		NewMenuItem("open", "o", "open file.", CommandOpen),
 		NewMenuItem("edit", "e", "open editor by file.", CommandEdit),
 	}
-	menuView.win = newWindow(0, height/2, width, height/2)
+	menuView.win = newWindow(0, halfHeight, width, height-halfHeight)
 	menuView.cursorPos = newPosition(0, 0)
 	menuView.drawPos = newPosition(0, 0)
 	p.menuView = menuView
 
 	detailView := &DetailView{}
-	detailView.win = newWindow(width/2, 1, width/2, height-2)
+	detailView.win = newWindow(halfWidth, 1, width-halfWidth, height-2)
 	detailView.cursorPos = newPosition(0, 0)
 	detailView.drawPos = newPosition(0, 0)
 	p.detailView = detailView
