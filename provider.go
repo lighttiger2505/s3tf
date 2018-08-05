@@ -77,9 +77,7 @@ func (p *Provider) Init() {
 		NewMenuItem("open", "o", "open file.", CommandOpen),
 		NewMenuItem("edit", "e", "open editor by file.", CommandEdit),
 	}
-	menuView.win = newWindow(0, halfHeight, width, height-halfHeight)
-	menuView.cursorPos = newPosition(0, 0)
-	menuView.drawPos = newPosition(0, 0)
+	menuView.layer = NewLayer(0, halfHeight, width, height-halfHeight)
 	p.menuView = menuView
 
 	detailView := &DetailView{}

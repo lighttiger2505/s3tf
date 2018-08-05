@@ -269,67 +269,36 @@ func (i *MenuItem) toString() string {
 
 type MenuView struct {
 	Render
-	items     []*MenuItem
-	win       *Window
-	cursorPos *Position
-	drawPos   *Position
+	items []*MenuItem
+	layer *Layer
 }
 
 func (v *MenuView) Draw() {
-	// Draw backgroud color
-	for i := 0; i < v.win.Box.Height; i++ {
-		drawStr := PadRight("", v.win.Box.Width, " ")
-		drawY := v.win.DrawY(i)
-		fg := termbox.ColorDefault
-		bg := termbox.ColorDefault
-		tbPrint(0, drawY, fg, bg, drawStr)
-	}
-	// Draw menu command item
-	for i, item := range v.items {
-		if i >= v.drawPos.Y {
-			drawStr := PadRight(item.toString(), v.win.Box.Width, " ")
-			drawY := v.win.DrawY(i) - v.drawPos.Y
-			var fg, bg termbox.Attribute
-			if drawY == v.getCursorY() {
-				fg = termbox.ColorWhite
-				bg = termbox.ColorGreen
-			} else {
-				fg = termbox.ColorDefault
-				bg = termbox.ColorDefault
-			}
-			tbPrint(0, drawY, fg, bg, drawStr)
-		}
-	}
-}
+	v.layer.DrawBackGround(termbox.ColorDefault, termbox.ColorDefault)
 
-func (v *MenuView) getCursorY() int {
-	return v.win.DrawY(v.cursorPos.Y) - v.drawPos.Y
+	lines := []string{}
+	for _, item := range v.items {
+		lines = append(lines, item.toString())
+	}
+	v.layer.DrawContents(
+		lines,
+		termbox.ColorWhite,
+		termbox.ColorGreen,
+		termbox.ColorDefault,
+		termbox.ColorDefault,
+	)
 }
 
 func (v *MenuView) getCursorItem() *MenuItem {
-	return v.items[v.cursorPos.Y]
+	return v.items[v.layer.cursorPos.Y]
 }
 
 func (v *MenuView) up() int {
-	if v.cursorPos.Y > 0 {
-		v.cursorPos.Y--
-	}
-	if v.cursorPos.Y < v.drawPos.Y {
-		v.drawPos.Y = v.cursorPos.Y
-	}
-	log.Printf("Up. CursorPosition:%d, DrawPosition:%d", v.cursorPos.Y, v.drawPos.Y)
-	return v.cursorPos.Y
+	return v.layer.UpCursor()
 }
 
 func (v *MenuView) down() int {
-	if v.cursorPos.Y < (len(v.items) - 1) {
-		v.cursorPos.Y++
-	}
-	if v.cursorPos.Y > (v.drawPos.Y + v.win.Box.Height - 1) {
-		v.drawPos.Y = v.cursorPos.Y - v.win.Box.Height + 1
-	}
-	log.Printf("Down. CursorPosition:%d, DrawPosition:%d", v.cursorPos.Y, v.drawPos.Y)
-	return v.cursorPos.Y
+	return v.layer.DownCursor(len(v.items))
 }
 
 type DetailView struct {
