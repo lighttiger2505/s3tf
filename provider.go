@@ -21,6 +21,7 @@ type ProviderStatus int
 const (
 	StateList ProviderStatus = iota //0
 	StateMenu
+	StateDetail
 )
 
 type Provider struct {
@@ -33,6 +34,7 @@ type Provider struct {
 	navigationView *NavigationView
 	statusView     *StatusView
 	menuView       *MenuView
+	detailView     *DetailView
 }
 
 func NewProvider() *Provider {
@@ -73,10 +75,16 @@ func (p *Provider) Init() {
 		NewMenuItem("open", "o", "open file.", CommandOpen),
 		NewMenuItem("edit", "e", "open editor by file.", CommandEdit),
 	}
-	menuView.win = newWindow(0, height-20-1, width, 20)
+	menuView.win = newWindow(0, height/2, width, height/2)
 	menuView.cursorPos = newPosition(0, 0)
 	menuView.drawPos = newPosition(0, 0)
 	p.menuView = menuView
+
+	detailView := &DetailView{}
+	detailView.win = newWindow(width/2, 1, width/2, height-2)
+	detailView.cursorPos = newPosition(0, 0)
+	detailView.drawPos = newPosition(0, 0)
+	p.detailView = detailView
 }
 
 func (p *Provider) Loop() {
@@ -105,6 +113,9 @@ func (p *Provider) Draw() {
 	p.navigationView.Draw()
 	if p.status == StateMenu {
 		p.menuView.Draw()
+	}
+	if p.status == StateDetail {
+		p.detailView.Draw()
 	}
 	p.statusView.Draw()
 }
@@ -257,6 +268,8 @@ func (p *Provider) Handle(ev termbox.Event) {
 		p.listEvent(ev)
 	case StateMenu:
 		p.menuEvent(ev)
+	case StateDetail:
+		p.detailEvent(ev)
 	}
 }
 
@@ -272,7 +285,9 @@ func (p *Provider) listEvent(ev termbox.Event) {
 	} else if ev.Ch == 'k' || ev.Key == termbox.KeyArrowUp || ev.Key == termbox.KeyCtrlP {
 		p.navigator.position = p.listView.up()
 	} else if ev.Ch == 'm' {
-		p.menu()
+		p.status = StateMenu
+	} else if ev.Ch == 'd' {
+		p.status = StateDetail
 	} else if ev.Ch == 'h' || ev.Key == termbox.KeyArrowLeft {
 		if !p.navigator.IsRoot() {
 			p.loadPrev()
@@ -308,6 +323,16 @@ func (p *Provider) menuEvent(ev termbox.Event) {
 		case CommandEdit:
 			p.edit()
 		}
+		p.status = StateList
+	}
+}
+
+func (p *Provider) detailEvent(ev termbox.Event) {
+	if ev.Ch == 'j' || ev.Key == termbox.KeyArrowDown || ev.Key == termbox.KeyCtrlN {
+		p.detailView.down()
+	} else if ev.Ch == 'k' || ev.Key == termbox.KeyArrowUp || ev.Key == termbox.KeyCtrlP {
+		p.detailView.up()
+	} else if ev.Ch == 'q' {
 		p.status = StateList
 	}
 }

@@ -255,3 +255,86 @@ func (v *MenuView) down() int {
 	log.Printf("Down. CursorPosition:%d, DrawPosition:%d", v.cursorPos.Y, v.drawPos.Y)
 	return v.cursorPos.Y
 }
+
+type DetailView struct {
+	Render
+	object    *S3Object
+	win       *Window
+	cursorPos *Position
+	drawPos   *Position
+}
+
+func (v *DetailView) getContents() []string {
+	contents := `hogetitle
+
+hogecontent1
+hogecontent2
+hogecontent3
+hogecontent4
+hogecontent5
+hogecontent6
+hogecontent7
+hogecontent8
+hogecontent9
+hogecontent10
+`
+	return strings.Split(contents, "\n")
+}
+
+func (v *DetailView) getCursorY() int {
+	log.Printf("getCursorY. CursorPosition:%d, DrawPosition:%d", v.cursorPos.Y, v.drawPos.Y)
+	return v.win.DrawY(v.cursorPos.Y) - v.drawPos.Y
+}
+
+func (v *DetailView) up() int {
+	if v.cursorPos.Y > 0 {
+		v.cursorPos.Y--
+	}
+	if v.cursorPos.Y < v.drawPos.Y {
+		v.drawPos.Y = v.cursorPos.Y
+	}
+	log.Printf("Up detail. CursorPosition:%d, DrawPosition:%d", v.cursorPos.Y, v.drawPos.Y)
+	return v.cursorPos.Y
+}
+
+func (v *DetailView) down() int {
+	lines := v.getContents()
+	if v.cursorPos.Y < (len(lines) - 1) {
+		v.cursorPos.Y++
+	}
+	if v.cursorPos.Y > (v.drawPos.Y + v.win.Box.Height - 1) {
+		v.drawPos.Y = v.cursorPos.Y - v.win.Box.Height + 1
+	}
+	log.Printf("Down detail. CursorPosition:%d, DrawPosition:%d", v.cursorPos.Y, v.drawPos.Y)
+	return v.cursorPos.Y
+}
+
+func (v *DetailView) Draw() {
+	// Draw backgroud color
+	for i := 0; i < v.win.Box.Height; i++ {
+		drawStr := PadRight("", v.win.Box.Width, " ")
+		drawX := v.win.DrawX(0)
+		drawY := v.win.DrawY(i) - v.drawPos.Y
+		fg := termbox.ColorDefault
+		bg := termbox.ColorDefault
+		tbPrint(drawX, drawY, fg, bg, drawStr)
+	}
+	// Draw menu command item
+	lines := v.getContents()
+	for i, line := range lines {
+		if i >= v.drawPos.Y {
+			drawStr := PadRight(line, v.win.Box.Width, " ")
+			drawX := v.win.DrawX(0)
+			drawY := v.win.DrawY(i) - v.drawPos.Y
+			var fg, bg termbox.Attribute
+			if drawY == v.getCursorY() {
+				fg = termbox.ColorWhite
+				bg = termbox.ColorGreen
+			} else {
+				fg = termbox.ColorDefault
+				bg = termbox.ColorDefault
+			}
+			tbPrint(drawX, drawY, fg, bg, drawStr)
+		}
+	}
+}
