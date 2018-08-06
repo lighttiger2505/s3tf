@@ -260,6 +260,12 @@ func (p *Provider) menu() {
 	p.status = StateMenu
 }
 
+func (p *Provider) detail(obj *S3Object) {
+	p.status = StateDetail
+	p.detailView.obj = Detail(p.bucket, obj.Name)
+	p.detailView.key = obj.Name
+}
+
 func (p *Provider) Handle(ev termbox.Event) {
 	switch p.status {
 	case StateList:
@@ -283,9 +289,10 @@ func (p *Provider) listEvent(ev termbox.Event) {
 	} else if ev.Ch == 'k' || ev.Key == termbox.KeyArrowUp || ev.Key == termbox.KeyCtrlP {
 		p.navigator.position = p.listView.up()
 	} else if ev.Ch == 'm' {
-		p.status = StateMenu
+		p.menu()
 	} else if ev.Ch == 'd' {
-		p.status = StateDetail
+		obj := p.listView.getCursorObject()
+		p.detail(obj)
 	} else if ev.Ch == 'h' || ev.Key == termbox.KeyArrowLeft {
 		if !p.navigator.IsRoot() {
 			p.loadPrev()

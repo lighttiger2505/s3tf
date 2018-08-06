@@ -117,6 +117,27 @@ func DownloadObject(bucket, key string, file io.WriterAt) {
 	}
 }
 
+func Detail(bucket, key string) *s3.GetObjectOutput {
+	client := getS3Client()
+
+	ctx := context.Background()
+	ctx, cancelFn := context.WithTimeout(ctx, RequestTimeout)
+	defer cancelFn()
+
+	result, err := client.GetObjectWithContext(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == s3.ErrCodeNoSuchKey {
+			log.Fatalf("get object canceled due to timeout, %v", err)
+		} else {
+			log.Fatalf("failed get object, %v", err)
+		}
+	}
+	return result
+}
+
 func getS3Downloader() *s3manager.Downloader {
 	var sess *session.Session
 	if mockFlag {

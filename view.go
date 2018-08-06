@@ -5,6 +5,8 @@ import (
 	"log"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 	termbox "github.com/nsf/termbox-go"
 )
 
@@ -303,25 +305,27 @@ func (v *MenuView) down() int {
 
 type DetailView struct {
 	Render
-	object *S3Object
-	layer  *Layer
+	key   string
+	obj   *s3.GetObjectOutput
+	layer *Layer
 }
 
 func (v *DetailView) getContents() []string {
-	contents := `hogetitle
+	base := `%v
 
-hogecontent1
-hogecontent2
-hogecontent3
-hogecontent4
-hogecontent5
-hogecontent6
-hogecontent7
-hogecontent8
-hogecontent9
-hogecontent10
-`
-	return strings.Split(contents, "\n")
+    LastModified: %v
+    Size: %v B
+    ETag: %v
+    Tags: %v`
+	res := fmt.Sprintf(
+		base,
+		v.key,
+		aws.TimeValue(v.obj.LastModified),
+		aws.Int64Value(v.obj.ContentLength),
+		aws.StringValue(v.obj.ETag),
+		aws.Int64Value(v.obj.TagCount),
+	)
+	return strings.Split(res, "\n")
 }
 
 func (v *DetailView) up() int {
