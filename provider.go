@@ -58,9 +58,7 @@ func (p *Provider) Init() {
 	listView := &ListView{}
 	listView.objects = p.node.objects
 	listView.key = p.node.key
-	listView.win = newWindow(0, 1, width, height-2)
-	listView.cursorPos = newPosition(0, 0)
-	listView.drawPos = newPosition(0, 0)
+	listView.layer = NewLayer(0, 1, width, height-2)
 	p.listView = listView
 
 	navigationView := &NavigationView{}
@@ -296,6 +294,10 @@ func (p *Provider) listEvent(ev termbox.Event) {
 		if !p.node.IsRoot() {
 			p.loadPrev()
 		}
+	} else if ev.Key == termbox.KeyCtrlD {
+		p.listView.halfPageDown()
+	} else if ev.Key == termbox.KeyCtrlU {
+		p.listView.halfPageUp()
 	} else if ev.Ch == 'r' {
 		p.reload()
 	} else if ev.Ch == 'w' {

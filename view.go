@@ -68,9 +68,10 @@ func (l *Layer) DrawContents(
 	}
 }
 
-func (l *Layer) UpCursor() int {
-	if l.cursorPos.Y > 0 {
-		l.cursorPos.Y--
+func (l *Layer) UpCursor(val int) int {
+	l.cursorPos.Y -= val
+	if l.cursorPos.Y < 0 {
+		l.cursorPos.Y = 0
 	}
 	if l.cursorPos.Y < l.drawPos.Y {
 		l.drawPos.Y = l.cursorPos.Y
@@ -79,15 +80,28 @@ func (l *Layer) UpCursor() int {
 	return l.cursorPos.Y
 }
 
-func (l *Layer) DownCursor(contentNum int) int {
-	if l.cursorPos.Y < (contentNum - 1) {
-		l.cursorPos.Y++
+func (l *Layer) DownCursor(val int, contentNum int) int {
+	l.cursorPos.Y += val
+	if l.cursorPos.Y > (contentNum - 1) {
+		l.cursorPos.Y = contentNum - 1
 	}
 	if l.cursorPos.Y > (l.drawPos.Y + l.win.Box.Height - 1) {
 		l.drawPos.Y = l.cursorPos.Y - l.win.Box.Height + 1
 	}
 	log.Printf("Down detail. CursorPosition:%d, DrawPosition:%d", l.cursorPos.Y, l.drawPos.Y)
 	return l.cursorPos.Y
+}
+
+func (l *Layer) HalfPageUpCursor() int {
+	_, height := termbox.Size()
+	halfPage := height / 2
+	return l.UpCursor(halfPage)
+}
+
+func (l *Layer) HalfPageDownCursor(contentNum int) int {
+	_, height := termbox.Size()
+	halfPage := height / 2
+	return l.DownCursor(halfPage, contentNum)
 }
 
 type Position struct {
@@ -138,12 +152,10 @@ const (
 
 type ListView struct {
 	Render
-	key       string
-	listType  S3ListType
-	objects   []*S3Object
-	win       *Window
-	cursorPos *Position
-	drawPos   *Position
+	key      string
+	listType S3ListType
+	objects  []*S3Object
+	layer    *Layer
 }
 
 func (v *ListView) Draw() {
@@ -153,11 +165,11 @@ func (v *ListView) Draw() {
 			drawStr = strings.TrimPrefix(obj.Name, v.key)
 		}
 
-		if i >= v.drawPos.Y {
-			drawY := v.win.DrawY(i) - v.drawPos.Y
+		if i >= v.layer.drawPos.Y {
+			drawY := v.layer.getDrawY(i)
 			var fg, bg termbox.Attribute
-			if drawY == v.getCursorY() {
-				drawStr = PadRight(drawStr, v.win.Box.Width, " ")
+			if drawY == v.layer.getCursorY() {
+				drawStr = PadRight(drawStr, v.layer.win.Box.Width, " ")
 				fg = termbox.ColorWhite
 				bg = termbox.ColorGreen
 			} else if Bucket == obj.ObjType || PreDir == obj.ObjType || Dir == obj.ObjType {
@@ -172,41 +184,31 @@ func (v *ListView) Draw() {
 	}
 }
 
-func (v *ListView) getCursorY() int {
-	return v.win.DrawY(v.cursorPos.Y) - v.drawPos.Y
-}
-
 func (v *ListView) getCursorObject() *S3Object {
-	return v.objects[v.cursorPos.Y]
+	return v.objects[v.layer.cursorPos.Y]
 }
 
 func (v *ListView) updateList(node *Node) {
-	v.cursorPos.Y = node.position
+	v.layer.cursorPos.Y = node.position
 	v.objects = node.objects
 	v.key = node.key
 	v.listType = node.GetType()
 }
 
 func (v *ListView) up() int {
-	if v.cursorPos.Y > 0 {
-		v.cursorPos.Y--
-	}
-	if v.cursorPos.Y < v.drawPos.Y {
-		v.drawPos.Y = v.cursorPos.Y
-	}
-	log.Printf("Up. CursorPosition:%d, DrawPosition:%d", v.cursorPos.Y, v.drawPos.Y)
-	return v.cursorPos.Y
+	return v.layer.UpCursor(1)
 }
 
 func (v *ListView) down() int {
-	if v.cursorPos.Y < (len(v.objects) - 1) {
-		v.cursorPos.Y++
-	}
-	if v.cursorPos.Y > (v.drawPos.Y + v.win.Box.Height - 1) {
-		v.drawPos.Y = v.cursorPos.Y - v.win.Box.Height + 1
-	}
-	log.Printf("Down. CursorPosition:%d, DrawPosition:%d", v.cursorPos.Y, v.drawPos.Y)
-	return v.cursorPos.Y
+	return v.layer.DownCursor(1, len(v.objects))
+}
+
+func (v *ListView) halfPageUp() int {
+	return v.layer.HalfPageUpCursor()
+}
+
+func (v *ListView) halfPageDown() int {
+	return v.layer.HalfPageDownCursor(len(v.objects))
 }
 
 type NavigationView struct {
@@ -300,11 +302,11 @@ func (v *MenuView) getCursorItem() *MenuItem {
 }
 
 func (v *MenuView) up() int {
-	return v.layer.UpCursor()
+	return v.layer.UpCursor(1)
 }
 
 func (v *MenuView) down() int {
-	return v.layer.DownCursor(len(v.items))
+	return v.layer.DownCursor(1, len(v.items))
 }
 
 type DetailView struct {
@@ -333,12 +335,12 @@ func (v *DetailView) getContents() []string {
 }
 
 func (v *DetailView) up() int {
-	return v.layer.UpCursor()
+	return v.layer.UpCursor(1)
 }
 
 func (v *DetailView) down() int {
 	lines := v.getContents()
-	return v.layer.DownCursor(len(lines))
+	return v.layer.DownCursor(1, len(lines))
 }
 
 func (v *DetailView) Draw() {
