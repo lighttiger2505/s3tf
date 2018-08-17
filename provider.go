@@ -251,7 +251,6 @@ func (p *Provider) loadNext(key string, objects []*S3Object) {
 func (p *Provider) loadPrev() {
 	parent := p.navigator.parent
 	p.navigator = parent
-	p.bucket = ""
 	p.listView.updateList(parent)
 	log.Printf("Load prev. parent:%s", parent.key)
 }
