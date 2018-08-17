@@ -138,6 +138,27 @@ func Detail(bucket, key string) *s3.GetObjectOutput {
 	return result
 }
 
+func Acl(bucket, key string) *s3.GetObjectAclOutput {
+	client := getS3Client()
+
+	ctx := context.Background()
+	ctx, cancelFn := context.WithTimeout(ctx, RequestTimeout)
+	defer cancelFn()
+
+	result, err := client.GetObjectAclWithContext(ctx, &s3.GetObjectAclInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == s3.ErrCodeNoSuchKey {
+			log.Fatalf("get object acl canceled due to timeout, %v", err)
+		} else {
+			log.Fatalf("failed get object acl, %v", err)
+		}
+	}
+	return result
+}
+
 func getS3Downloader() *s3manager.Downloader {
 	var sess *session.Session
 	if mockFlag {
