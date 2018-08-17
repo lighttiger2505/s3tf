@@ -211,22 +211,26 @@ func (v *ListView) down() int {
 
 type NavigationView struct {
 	Render
-	key string
-	win *Window
+	currentPath string
+	win         *Window
 }
 
-func (v *NavigationView) SetKey(bucket, key string) {
-	if key == "" {
-		v.key = "list bucket"
-	} else if bucket == key {
-		v.key = bucket
+func (v *NavigationView) SetCurrentPath(bucket string, node *Node) {
+	if node.IsRoot() {
+		v.currentPath = "list bucket"
+		return
+	}
+
+	showBucketName := fmt.Sprintf("s3://%s", bucket)
+	if node.IsBucketRoot() {
+		v.currentPath = showBucketName
 	} else {
-		v.key = strings.Join([]string{bucket, key}, "/")
+		v.currentPath = strings.Join([]string{showBucketName, node.key}, "/")
 	}
 }
 
 func (v *NavigationView) Draw() {
-	str := PadRight(v.key, v.win.Box.Width, " ")
+	str := PadRight(v.currentPath, v.win.Box.Width, " ")
 	tbPrint(0, v.win.DrawY(0), termbox.ColorWhite, termbox.ColorBlue, str)
 }
 

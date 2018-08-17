@@ -28,7 +28,7 @@ type Provider struct {
 	EventHandler
 	quitChan       chan struct{}
 	status         ProviderStatus
-	navigator      *Node
+	node           *Node
 	bucket         string
 	listView       *ListView
 	navigationView *NavigationView
@@ -53,11 +53,11 @@ func (p *Provider) Init() {
 	halfHeight := height / 2
 
 	p.status = StateList
-	p.navigator = rootNode
+	p.node = rootNode
 
 	listView := &ListView{}
-	listView.objects = p.navigator.objects
-	listView.key = p.navigator.key
+	listView.objects = p.node.objects
+	listView.key = p.node.key
 	listView.win = newWindow(0, 1, width, height-2)
 	listView.cursorPos = newPosition(0, 0)
 	listView.drawPos = newPosition(0, 0)
@@ -101,7 +101,7 @@ func (p *Provider) Loop() {
 }
 
 func (p *Provider) Update() {
-	p.navigationView.SetKey(p.bucket, p.navigator.key)
+	p.navigationView.SetCurrentPath(p.bucket, p.node)
 }
 
 func (p *Provider) Draw() {
@@ -119,20 +119,20 @@ func (p *Provider) Draw() {
 }
 
 func (p *Provider) reload() {
-	if p.navigator.IsRoot() {
-		p.navigator.objects = ListBuckets()
-		p.listView.objects = p.navigator.objects
+	if p.node.IsRoot() {
+		p.node.objects = ListBuckets()
+		p.listView.objects = p.node.objects
 		return
 	}
 
-	if p.navigator.IsBucketRoot() {
-		p.navigator.objects = ListObjects(p.bucket, "")
-		p.listView.objects = p.navigator.objects
+	if p.node.IsBucketRoot() {
+		p.node.objects = ListObjects(p.bucket, "")
+		p.listView.objects = p.node.objects
 		return
 	}
 
-	p.navigator.objects = ListObjects(p.bucket, p.navigator.key)
-	p.listView.objects = p.navigator.objects
+	p.node.objects = ListObjects(p.bucket, p.node.key)
+	p.listView.objects = p.node.objects
 }
 
 func (p *Provider) download() {
@@ -209,7 +209,7 @@ func (p *Provider) show(obj *S3Object) {
 	case Bucket:
 		bucketName := obj.Name
 		p.bucket = bucketName
-		if p.navigator.IsExistChildren(bucketName) {
+		if p.node.IsExistChildren(bucketName) {
 			p.moveNext(bucketName)
 			return
 		}
@@ -218,7 +218,7 @@ func (p *Provider) show(obj *S3Object) {
 	case Dir:
 		bucketName := p.bucket
 		objectKey := obj.Name
-		if p.navigator.IsExistChildren(objectKey) {
+		if p.node.IsExistChildren(objectKey) {
 			p.moveNext(objectKey)
 			return
 		}
@@ -233,24 +233,24 @@ func (p *Provider) show(obj *S3Object) {
 }
 
 func (p *Provider) moveNext(key string) {
-	child := p.navigator.GetChild(key)
-	p.navigator = child
+	child := p.node.GetChild(key)
+	p.node = child
 	p.listView.updateList(child)
 	log.Printf("Move next. child:%s", child.key)
 }
 
 func (p *Provider) loadNext(key string, objects []*S3Object) {
-	parent := p.navigator
+	parent := p.node
 	child := NewNode(key, parent, objects)
 	parent.AddChild(key, child)
-	p.navigator = child
+	p.node = child
 	p.listView.updateList(child)
 	log.Printf("Load next. parent:%s, child:%s", parent.key, child.key)
 }
 
 func (p *Provider) loadPrev() {
-	parent := p.navigator.parent
-	p.navigator = parent
+	parent := p.node.parent
+	p.node = parent
 	p.listView.updateList(parent)
 	log.Printf("Load prev. parent:%s", parent.key)
 }
@@ -284,16 +284,16 @@ func (p *Provider) listEvent(ev termbox.Event) {
 			panic("this should never run")
 		}()
 	} else if ev.Ch == 'j' || ev.Key == termbox.KeyArrowDown || ev.Key == termbox.KeyCtrlN {
-		p.navigator.position = p.listView.down()
+		p.node.position = p.listView.down()
 	} else if ev.Ch == 'k' || ev.Key == termbox.KeyArrowUp || ev.Key == termbox.KeyCtrlP {
-		p.navigator.position = p.listView.up()
+		p.node.position = p.listView.up()
 	} else if ev.Ch == 'm' {
 		p.menu()
 	} else if ev.Ch == 'd' {
 		obj := p.listView.getCursorObject()
 		p.detail(obj)
 	} else if ev.Ch == 'h' || ev.Key == termbox.KeyArrowLeft {
-		if !p.navigator.IsRoot() {
+		if !p.node.IsRoot() {
 			p.loadPrev()
 		}
 	} else if ev.Ch == 'r' {
