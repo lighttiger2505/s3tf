@@ -191,5 +191,7 @@ func getMinioSession() *session.Session {
 }
 
 func getAWSSession() *session.Session {
-	return session.Must(session.NewSession())
+	return session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}))
 }
