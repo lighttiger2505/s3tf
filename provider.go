@@ -182,6 +182,7 @@ func (p *Provider) edit() {
 	bucketName := p.bucket
 	switch obj.ObjType {
 	case Object:
+		// download edit file on temporary file
 		tempDir, _ := ioutil.TempDir("", "")
 		f, err := os.Create(filepath.Join(tempDir, Filename(obj.Name)))
 		if err != nil {
@@ -191,15 +192,18 @@ func (p *Provider) edit() {
 		editFilePath := f.Name()
 		f.Close()
 
+		// termbox close and restert for edit
 		termbox.Close()
 		defer termbox.Init()
 		OpenEditor(editFilePath)
 
+		// update edited object
 		editedf, err := os.Open(editFilePath)
 		if err != nil {
 			log.Fatalf("failed open edited file, %v", err)
 		}
 		Update(bucketName, obj.Name, editedf)
+
 		path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
 		p.statusView.msg = fmt.Sprintf("edit. %s", path)
 	default:
