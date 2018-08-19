@@ -13,7 +13,7 @@ s3tf is AWS s3 TUI file manager. Provides a list and operations of s3 objects
     - [x] Open
     - [x] Download
     - [ ] Recursive download (like a `cp -r`)
-    - [ ] Update (on local editor)
+    - [x] Update (on local editor)
     - [ ] Rename
     - [ ] Cut & Paste
     - [ ] Copy & Paste
