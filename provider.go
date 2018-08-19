@@ -195,6 +195,11 @@ func (p *Provider) edit() {
 		defer termbox.Init()
 		OpenEditor(editFilePath)
 
+		editedf, err := os.Open(editFilePath)
+		if err != nil {
+			log.Fatalf("failed open edited file, %v", err)
+		}
+		Update(bucketName, obj.Name, editedf)
 		path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
 		p.statusView.msg = fmt.Sprintf("edit. %s", path)
 	default:

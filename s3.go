@@ -159,6 +159,28 @@ func Acl(bucket, key string) *s3.GetObjectAclOutput {
 	return result
 }
 
+func Update(bucket, key string, body io.Reader) *s3.PutObjectOutput {
+	client := getS3Client()
+
+	ctx := context.Background()
+	ctx, cancelFn := context.WithTimeout(ctx, RequestTimeout)
+	defer cancelFn()
+
+	result, err := client.PutObjectWithContext(ctx, &s3.PutObjectInput{
+		Body:   aws.ReadSeekCloser(body),
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == s3.ErrCodeNoSuchKey {
+			log.Fatalf("put object canceled due to timeout, %v", err)
+		} else {
+			log.Fatalf("failed put object, %v", err)
+		}
+	}
+	return result
+}
+
 func getS3Downloader() *s3manager.Downloader {
 	var sess *session.Session
 	if mockFlag {
