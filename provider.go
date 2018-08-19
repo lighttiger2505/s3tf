@@ -12,6 +12,91 @@ import (
 	termbox "github.com/nsf/termbox-go"
 )
 
+type eventAction string
+
+const (
+	// move cursor
+	actQuit     = "quit"
+	actUp       = "up"
+	actDown     = "down"
+	actHalfUp   = "half-up"
+	actHalfDown = "half-down"
+	// s3 control
+	actReloadDir      = "reload-dir"
+	actMoveNextDir    = "move-next-dir"
+	actMovePrevDir    = "move-prev-dir"
+	actDownloadObject = "download-object"
+	actOpenObject     = "open-object"
+	actEditObject     = "edit-object"
+	// move view
+	actOpenMenu   = "open-menu"
+	actOpenDetail = "open-detail"
+	// Menu view action
+	actDoMenuAction = "do-menu-action"
+)
+
+var chMapOnList = map[rune]eventAction{
+	'q': actQuit,
+	'k': actUp,
+	'j': actDown,
+	'h': actMovePrevDir,
+	'l': actMoveNextDir,
+	'r': actReloadDir,
+	'w': actDownloadObject,
+	'o': actOpenObject,
+	'e': actEditObject,
+	'm': actOpenMenu,
+}
+var keyMapOnList = map[termbox.Key]eventAction{
+	termbox.KeyEsc:       actQuit,
+	termbox.KeyArrowUp:   actUp,
+	termbox.KeyCtrlP:     actUp,
+	termbox.KeyArrowDown: actDown,
+	termbox.KeyCtrlN:     actDown,
+	termbox.KeyEnter:     actMoveNextDir,
+}
+var chMapOnMenu = map[rune]eventAction{
+	'q': actQuit,
+	'm': actQuit,
+	'k': actUp,
+	'j': actDown,
+}
+var keyMapOnMenu = map[termbox.Key]eventAction{
+	termbox.KeyEsc:       actQuit,
+	termbox.KeyArrowUp:   actUp,
+	termbox.KeyCtrlP:     actUp,
+	termbox.KeyArrowDown: actDown,
+	termbox.KeyCtrlN:     actDown,
+	termbox.KeyEnter:     actDoMenuAction,
+}
+var chMapOnDetail = map[rune]eventAction{
+	'q': actQuit,
+	'k': actUp,
+	'j': actDown,
+}
+var keyMapOnDetail = map[termbox.Key]eventAction{
+	termbox.KeyEsc:       actQuit,
+	termbox.KeyArrowUp:   actUp,
+	termbox.KeyCtrlP:     actUp,
+	termbox.KeyArrowDown: actDown,
+	termbox.KeyCtrlN:     actDown,
+}
+
+func getEventAction(
+	ev termbox.Event,
+	chMap map[rune]eventAction,
+	keyMap map[termbox.Key]eventAction,
+) eventAction {
+	var res eventAction
+	if val, ok := chMap[ev.Ch]; ok {
+		res = val
+	}
+	if val, ok := keyMap[ev.Key]; ok {
+		res = val
+	}
+	return res
+}
+
 type EventHandler interface {
 	Handle(termbox.Event)
 }
@@ -284,51 +369,66 @@ func (p *Provider) Handle(ev termbox.Event) {
 }
 
 func (p *Provider) listEvent(ev termbox.Event) {
-	if ev.Key == termbox.KeyEsc || ev.Ch == 'q' {
+	ea := getEventAction(ev, chMapOnList, keyMapOnList)
+	if ea == "" {
+		p.statusView.msg = "no mapping key"
+		return
+	}
+
+	switch ea {
+	case actQuit:
 		go func() {
 			termbox.Interrupt()
 			time.Sleep(1 * time.Second)
 			panic("this should never run")
 		}()
-	} else if ev.Ch == 'j' || ev.Key == termbox.KeyArrowDown || ev.Key == termbox.KeyCtrlN {
+	case actDown:
 		p.node.position = p.listView.down()
-	} else if ev.Ch == 'k' || ev.Key == termbox.KeyArrowUp || ev.Key == termbox.KeyCtrlP {
+	case actUp:
 		p.node.position = p.listView.up()
-	} else if ev.Ch == 'm' {
+	case actHalfUp:
+		p.listView.halfPageUp()
+	case actHalfDown:
+		p.listView.halfPageDown()
+	case actOpenMenu:
 		p.menu()
-	} else if ev.Ch == 'd' {
+	case actOpenDetail:
 		obj := p.listView.getCursorObject()
 		p.detail(obj)
-	} else if ev.Ch == 'h' || ev.Key == termbox.KeyArrowLeft {
+	case actMovePrevDir:
 		if !p.node.IsRoot() {
 			p.loadPrev()
 		}
-	} else if ev.Key == termbox.KeyCtrlD {
-		p.listView.halfPageDown()
-	} else if ev.Key == termbox.KeyCtrlU {
-		p.listView.halfPageUp()
-	} else if ev.Ch == 'r' {
-		p.reload()
-	} else if ev.Ch == 'w' {
-		p.download()
-	} else if ev.Ch == 'o' {
-		p.open()
-	} else if ev.Ch == 'e' {
-		p.edit()
-	} else if ev.Ch == 'l' || ev.Key == termbox.KeyArrowRight || ev.Key == termbox.KeyEnter {
+	case actMoveNextDir:
 		obj := p.listView.getCursorObject()
 		p.show(obj)
+	case actReloadDir:
+		p.reload()
+	case actOpenObject:
+		p.open()
+	case actDownloadObject:
+		p.download()
+	case actEditObject:
+		p.edit()
+	default:
 	}
 }
 
 func (p *Provider) menuEvent(ev termbox.Event) {
-	if ev.Ch == 'j' || ev.Key == termbox.KeyArrowDown || ev.Key == termbox.KeyCtrlN {
-		p.menuView.down()
-	} else if ev.Ch == 'k' || ev.Key == termbox.KeyArrowUp || ev.Key == termbox.KeyCtrlP {
-		p.menuView.up()
-	} else if ev.Ch == 'q' {
+	ea := getEventAction(ev, chMapOnMenu, keyMapOnMenu)
+	if ea == "" {
+		p.statusView.msg = "no mapping key"
+		return
+	}
+
+	switch ea {
+	case actQuit:
 		p.status = StateList
-	} else if ev.Key == termbox.KeyEnter {
+	case actUp:
+		p.menuView.up()
+	case actDown:
+		p.menuView.down()
+	case actDoMenuAction:
 		item := p.menuView.getCursorItem()
 		switch item.command {
 		case CommandDownload:
@@ -339,15 +439,24 @@ func (p *Provider) menuEvent(ev termbox.Event) {
 			p.edit()
 		}
 		p.status = StateList
+	default:
 	}
 }
 
 func (p *Provider) detailEvent(ev termbox.Event) {
-	if ev.Ch == 'j' || ev.Key == termbox.KeyArrowDown || ev.Key == termbox.KeyCtrlN {
-		p.detailView.down()
-	} else if ev.Ch == 'k' || ev.Key == termbox.KeyArrowUp || ev.Key == termbox.KeyCtrlP {
-		p.detailView.up()
-	} else if ev.Ch == 'q' {
+	ea := getEventAction(ev, chMapOnDetail, keyMapOnDetail)
+	if ea == "" {
+		p.statusView.msg = "no mapping key"
+		return
+	}
+
+	switch ea {
+	case actQuit:
 		p.status = StateList
+	case actUp:
+		p.detailView.up()
+	case actDown:
+		p.detailView.down()
+	default:
 	}
 }
