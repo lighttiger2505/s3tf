@@ -134,7 +134,6 @@ const (
 
 type Provider struct {
 	EventHandler
-	quitChan       chan struct{}
 	status         ProviderStatus
 	node           *Node
 	bucket         string
