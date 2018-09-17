@@ -343,10 +343,57 @@ func (v *DetailView) down() int {
 	return v.layer.DownCursor(1, len(lines))
 }
 
+func (v *DetailView) halfPageUp() int {
+	return v.layer.HalfPageUpCursor()
+}
+
+func (v *DetailView) halfPageDown() int {
+	return v.layer.HalfPageDownCursor(len(v.getContents()))
+}
+
 func (v *DetailView) Draw() {
 	v.layer.DrawBackGround(termbox.ColorDefault, termbox.ColorDefault)
 
 	lines := v.getContents()
+	v.layer.DrawContents(
+		lines,
+		termbox.ColorWhite,
+		termbox.ColorGreen,
+		termbox.ColorDefault,
+		termbox.ColorDefault,
+	)
+}
+
+type DownloadView struct {
+	Render
+	layer *Layer
+}
+
+func (v *DownloadView) getContents() []string {
+	return []string{"hoge", "hoge"}
+}
+
+func (v *DownloadView) up() int {
+	return v.layer.UpCursor(1)
+}
+
+func (v *DownloadView) down() int {
+	lines := v.getContents()
+	return v.layer.DownCursor(1, len(lines))
+}
+
+func (v *DownloadView) halfPageUp() int {
+	return v.layer.HalfPageUpCursor()
+}
+
+func (v *DownloadView) halfPageDown() int {
+	return v.layer.HalfPageDownCursor(len(v.getContents()))
+}
+
+func (v *DownloadView) Draw() {
+	v.layer.DrawBackGround(termbox.ColorDefault, termbox.ColorDefault)
+
+	lines := []string{"hoge", "hoge"}
 	v.layer.DrawContents(
 		lines,
 		termbox.ColorWhite,

@@ -29,8 +29,9 @@ const (
 	actOpenObject     = "open-object"
 	actEditObject     = "edit-object"
 	// move view
-	actOpenMenu   = "open-menu"
-	actOpenDetail = "open-detail"
+	actOpenMenu     = "open-menu"
+	actOpenDetail   = "open-detail"
+	actOpenDownload = "open-download"
 	// Menu view action
 	actDoMenuAction = "do-menu-action"
 )
@@ -46,6 +47,7 @@ var chMapOnList = map[rune]eventAction{
 	'o': actOpenObject,
 	'e': actEditObject,
 	'm': actOpenMenu,
+	'n': actOpenDownload,
 }
 var keyMapOnList = map[termbox.Key]eventAction{
 	termbox.KeyEsc:       actQuit,
@@ -53,6 +55,8 @@ var keyMapOnList = map[termbox.Key]eventAction{
 	termbox.KeyCtrlP:     actUp,
 	termbox.KeyArrowDown: actDown,
 	termbox.KeyCtrlN:     actDown,
+	termbox.KeyCtrlU:     actHalfUp,
+	termbox.KeyCtrlD:     actHalfDown,
 	termbox.KeyEnter:     actMoveNextDir,
 }
 var chMapOnMenu = map[rune]eventAction{
@@ -67,6 +71,8 @@ var keyMapOnMenu = map[termbox.Key]eventAction{
 	termbox.KeyCtrlP:     actUp,
 	termbox.KeyArrowDown: actDown,
 	termbox.KeyCtrlN:     actDown,
+	termbox.KeyCtrlU:     actHalfUp,
+	termbox.KeyCtrlD:     actHalfDown,
 	termbox.KeyEnter:     actDoMenuAction,
 }
 var chMapOnDetail = map[rune]eventAction{
@@ -80,6 +86,22 @@ var keyMapOnDetail = map[termbox.Key]eventAction{
 	termbox.KeyCtrlP:     actUp,
 	termbox.KeyArrowDown: actDown,
 	termbox.KeyCtrlN:     actDown,
+	termbox.KeyCtrlU:     actHalfUp,
+	termbox.KeyCtrlD:     actHalfDown,
+}
+var chMapOnDownload = map[rune]eventAction{
+	'q': actQuit,
+	'k': actUp,
+	'j': actDown,
+}
+var keyMapOnDownload = map[termbox.Key]eventAction{
+	termbox.KeyEsc:       actQuit,
+	termbox.KeyArrowUp:   actUp,
+	termbox.KeyCtrlP:     actUp,
+	termbox.KeyArrowDown: actDown,
+	termbox.KeyCtrlN:     actDown,
+	termbox.KeyCtrlU:     actHalfUp,
+	termbox.KeyCtrlD:     actHalfDown,
 }
 
 func getEventAction(
@@ -107,6 +129,7 @@ const (
 	StateList ProviderStatus = iota //0
 	StateMenu
 	StateDetail
+	StateDownload
 )
 
 type Provider struct {
@@ -120,6 +143,7 @@ type Provider struct {
 	statusView     *StatusView
 	menuView       *MenuView
 	detailView     *DetailView
+	downloadView   *DownloadView
 }
 
 func NewProvider() *Provider {
@@ -166,6 +190,10 @@ func (p *Provider) Init() {
 	detailView := &DetailView{}
 	detailView.layer = NewLayer(halfWidth, 1, width-halfWidth, height-2)
 	p.detailView = detailView
+
+	downloadView := &DownloadView{}
+	downloadView.layer = NewLayer(0, 1, width, height-2)
+	p.downloadView = downloadView
 }
 
 func (p *Provider) Loop() {
@@ -197,6 +225,9 @@ func (p *Provider) Draw() {
 	}
 	if p.status == StateDetail {
 		p.detailView.Draw()
+	}
+	if p.status == StateDownload {
+		p.downloadView.Draw()
 	}
 	p.statusView.Draw()
 }
@@ -357,6 +388,10 @@ func (p *Provider) detail(obj *S3Object) {
 	p.detailView.key = obj.Name
 }
 
+func (p *Provider) openDownload() {
+	p.status = StateDownload
+}
+
 func (p *Provider) Handle(ev termbox.Event) {
 	switch p.status {
 	case StateList:
@@ -365,6 +400,8 @@ func (p *Provider) Handle(ev termbox.Event) {
 		p.menuEvent(ev)
 	case StateDetail:
 		p.detailEvent(ev)
+	case StateDownload:
+		p.downloadEvent(ev)
 	}
 }
 
@@ -395,6 +432,8 @@ func (p *Provider) listEvent(ev termbox.Event) {
 	case actOpenDetail:
 		obj := p.listView.getCursorObject()
 		p.detail(obj)
+	case actOpenDownload:
+		p.openDownload()
 	case actMovePrevDir:
 		if !p.node.IsRoot() {
 			p.loadPrev()
@@ -457,6 +496,32 @@ func (p *Provider) detailEvent(ev termbox.Event) {
 		p.detailView.up()
 	case actDown:
 		p.detailView.down()
+	case actHalfUp:
+		p.detailView.halfPageUp()
+	case actHalfDown:
+		p.detailView.halfPageDown()
+	default:
+	}
+}
+
+func (p *Provider) downloadEvent(ev termbox.Event) {
+	ea := getEventAction(ev, chMapOnDownload, keyMapOnDownload)
+	if ea == "" {
+		p.statusView.msg = "no mapping key"
+		return
+	}
+
+	switch ea {
+	case actQuit:
+		p.status = StateList
+	case actUp:
+		p.downloadView.up()
+	case actDown:
+		p.downloadView.down()
+	case actHalfUp:
+		p.downloadView.halfPageUp()
+	case actHalfDown:
+		p.downloadView.halfPageDown()
 	default:
 	}
 }
