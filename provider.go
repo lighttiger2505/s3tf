@@ -134,15 +134,16 @@ const (
 
 type Provider struct {
 	EventHandler
-	status         ProviderStatus
-	node           *Node
-	bucket         string
-	listView       *ListView
-	navigationView *NavigationView
-	statusView     *StatusView
-	menuView       *MenuView
-	detailView     *DetailView
-	downloadView   *DownloadView
+	status          ProviderStatus
+	node            *Node
+	bucket          string
+	downloadObjects []*DownloadObject
+	listView        *ListView
+	navigationView  *NavigationView
+	statusView      *StatusView
+	menuView        *MenuView
+	detailView      *DetailView
+	downloadView    *DownloadView
 }
 
 func NewProvider() *Provider {
@@ -162,6 +163,23 @@ func (p *Provider) Init() {
 
 	p.status = StateList
 	p.node = rootNode
+	p.downloadObjects = []*DownloadObject{
+		&DownloadObject{
+			filename:     "foo",
+			s3Path:       "s3://foo/foo",
+			downloadPath: "/tmp/foo",
+		},
+		&DownloadObject{
+			filename:     "bar",
+			s3Path:       "s3://bar/bar",
+			downloadPath: "/tmp/bar",
+		},
+		&DownloadObject{
+			filename:     "foobar",
+			s3Path:       "s3://foobar/foobar",
+			downloadPath: "/tmp/foobar",
+		},
+	}
 
 	listView := &ListView{}
 	listView.objects = p.node.objects
@@ -253,16 +271,27 @@ func (p *Provider) download() {
 	bucketName := p.bucket
 	switch obj.ObjType {
 	case Object:
+		filename := Filename(obj.Name)
 		currentDir, _ := os.Getwd()
-		f, err := os.Create(filepath.Join(currentDir, Filename(obj.Name)))
+		downloadPath := filepath.Join(currentDir, filename)
+		f, err := os.Create(downloadPath)
 		if err != nil {
 			log.Fatalf("failed create donwload reader, %v", err)
 		}
 		defer f.Close()
 
-		DownloadObject(bucketName, obj.Name, f)
-		path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
-		p.statusView.msg = fmt.Sprintf("download complate. %s", path)
+		Download(bucketName, obj.Name, f)
+		s3Path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
+		p.statusView.msg = fmt.Sprintf("download complate. %s", s3Path)
+
+		p.downloadObjects = append(
+			p.downloadObjects,
+			&DownloadObject{
+				filename,
+				downloadPath,
+				s3Path,
+			},
+		)
 	default:
 		log.Println("Invalid s3 object type")
 	}
@@ -280,7 +309,7 @@ func (p *Provider) open() {
 		}
 		defer f.Close()
 
-		DownloadObject(bucketName, obj.Name, f)
+		Download(bucketName, obj.Name, f)
 		if err := Open(f.Name()); err != nil {
 			log.Fatalf("failed open file, %v", err)
 		}
@@ -303,7 +332,7 @@ func (p *Provider) edit() {
 		if err != nil {
 			log.Fatalf("failed create donwload reader, %v", err)
 		}
-		DownloadObject(bucketName, obj.Name, f)
+		Download(bucketName, obj.Name, f)
 		editFilePath := f.Name()
 		f.Close()
 
@@ -389,6 +418,7 @@ func (p *Provider) detail(obj *S3Object) {
 
 func (p *Provider) openDownload() {
 	p.status = StateDownload
+	p.downloadView.objects = p.downloadObjects
 }
 
 func (p *Provider) Handle(ev termbox.Event) {

@@ -97,7 +97,7 @@ func ListObjects(bucket, prefix string) []*S3Object {
 	return objects
 }
 
-func DownloadObject(bucket, key string, file io.WriterAt) {
+func Download(bucket, key string, file io.WriterAt) {
 	client := getS3Downloader()
 
 	ctx := context.Background()

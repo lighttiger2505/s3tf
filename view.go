@@ -364,13 +364,32 @@ func (v *DetailView) Draw() {
 	)
 }
 
+type DownloadObject struct {
+	filename     string
+	s3Path       string
+	downloadPath string
+}
+
 type DownloadView struct {
 	Render
-	layer *Layer
+	layer   *Layer
+	objects []*DownloadObject
 }
 
 func (v *DownloadView) getContents() []string {
-	return []string{"hoge", "hoge"}
+	drawLines := []string{}
+	for _, object := range v.objects {
+		tmpLine := strings.Join(
+			[]string{
+				object.filename,
+				object.s3Path,
+				object.downloadPath,
+			},
+			" ",
+		)
+		drawLines = append(drawLines, tmpLine)
+	}
+	return drawLines
 }
 
 func (v *DownloadView) up() int {
@@ -393,7 +412,7 @@ func (v *DownloadView) halfPageDown() int {
 func (v *DownloadView) Draw() {
 	v.layer.DrawBackGround(termbox.ColorDefault, termbox.ColorDefault)
 
-	lines := []string{"hoge", "hoge"}
+	lines := v.getContents()
 	v.layer.DrawContents(
 		lines,
 		termbox.ColorWhite,
