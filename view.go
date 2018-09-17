@@ -364,16 +364,10 @@ func (v *DetailView) Draw() {
 	)
 }
 
-type DownloadObject struct {
-	filename     string
-	s3Path       string
-	downloadPath string
-}
-
 type DownloadView struct {
 	Render
 	layer   *Layer
-	objects []*DownloadObject
+	objects []*DownloadItem
 }
 
 func (v *DownloadView) getContents() []string {
@@ -381,9 +375,9 @@ func (v *DownloadView) getContents() []string {
 	for _, object := range v.objects {
 		tmpLine := strings.Join(
 			[]string{
-				object.filename,
-				object.s3Path,
-				object.downloadPath,
+				object.Filename,
+				object.S3Path,
+				object.DownloadPath,
 			},
 			" ",
 		)
