@@ -143,7 +143,7 @@ type Provider struct {
 	listView       *ListView
 	navigationView *NavigationView
 	statusView     *StatusView
-	menuView       *MenuView
+	menuView       *view.MenuView
 	detailView     *view.DetailView
 	downloadView   *view.DownloadView
 }
@@ -185,15 +185,7 @@ func (p *Provider) Init() {
 	statusView.win = newWindow(0, height-1, width, 1)
 	p.statusView = statusView
 
-	menuView := &MenuView{}
-	menuView.items = []*MenuItem{
-		NewMenuItem("download", "w", "download file.", CommandDownload),
-		NewMenuItem("open", "o", "open file.", CommandOpen),
-		NewMenuItem("edit", "e", "open editor by file.", CommandEdit),
-	}
-	menuView.layer = NewLayer(0, halfHeight, width, height-halfHeight)
-	p.menuView = menuView
-
+	p.menuView = view.NewMenuView(0, halfHeight, width, height-halfHeight)
 	p.detailView = view.NewDetailView(halfWidth, 1, width-halfWidth, height-2)
 	p.downloadView = view.NewDownloadView(0, 1, width, height-2)
 }
@@ -482,17 +474,17 @@ func (p *Provider) menuEvent(ev termbox.Event) {
 	case actQuit:
 		p.status = StateList
 	case actUp:
-		p.menuView.up()
+		p.menuView.Up()
 	case actDown:
-		p.menuView.down()
+		p.menuView.Down()
 	case actDoMenuAction:
-		item := p.menuView.getCursorItem()
-		switch item.command {
-		case CommandDownload:
+		item := p.menuView.GetCursorItem()
+		switch item.Command {
+		case view.CommandDownload:
 			p.download()
-		case CommandOpen:
+		case view.CommandOpen:
 			p.open()
-		case CommandEdit:
+		case view.CommandEdit:
 			p.edit()
 		}
 		p.status = StateList
