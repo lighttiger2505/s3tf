@@ -142,7 +142,7 @@ type Provider struct {
 	dllFile        *model.DownloadListFile
 	listView       *ListView
 	navigationView *NavigationView
-	statusView     *StatusView
+	statusView     *view.StatusView
 	menuView       *view.MenuView
 	detailView     *view.DetailView
 	downloadView   *view.DownloadView
@@ -181,10 +181,7 @@ func (p *Provider) Init() {
 	navigationView.win = newWindow(0, 0, width, 1)
 	p.navigationView = navigationView
 
-	statusView := &StatusView{}
-	statusView.win = newWindow(0, height-1, width, 1)
-	p.statusView = statusView
-
+	p.statusView = view.NewStatusView(0, height-1, width, 1)
 	p.menuView = view.NewMenuView(0, halfHeight, width, height-halfHeight)
 	p.detailView = view.NewDetailView(halfWidth, 1, width-halfWidth, height-2)
 	p.downloadView = view.NewDownloadView(0, 1, width, height-2)
@@ -272,7 +269,7 @@ func (p *Provider) download() {
 			log.Fatalf("failed save download list file, %v", err)
 		}
 
-		p.statusView.msg = fmt.Sprintf("download complate. %s", s3Path)
+		p.statusView.Msg = fmt.Sprintf("download complate. %s", s3Path)
 	default:
 		log.Println("Invalid s3 object type")
 	}
@@ -296,7 +293,7 @@ func (p *Provider) open() {
 		}
 
 		path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
-		p.statusView.msg = fmt.Sprintf("open. %s", path)
+		p.statusView.Msg = fmt.Sprintf("open. %s", path)
 	default:
 		log.Println("Invalid s3 object type")
 	}
@@ -330,7 +327,7 @@ func (p *Provider) edit() {
 		Update(bucketName, obj.Name, editedf)
 
 		path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
-		p.statusView.msg = fmt.Sprintf("edit. %s", path)
+		p.statusView.Msg = fmt.Sprintf("edit. %s", path)
 	default:
 		log.Println("Invalid s3 object type")
 	}
@@ -418,7 +415,7 @@ func (p *Provider) Handle(ev termbox.Event) {
 func (p *Provider) listEvent(ev termbox.Event) {
 	ea := getEventAction(ev, chMapOnList, keyMapOnList)
 	if ea == "" {
-		p.statusView.msg = "no mapping key"
+		p.statusView.Msg = "no mapping key"
 		return
 	}
 
@@ -466,7 +463,7 @@ func (p *Provider) listEvent(ev termbox.Event) {
 func (p *Provider) menuEvent(ev termbox.Event) {
 	ea := getEventAction(ev, chMapOnMenu, keyMapOnMenu)
 	if ea == "" {
-		p.statusView.msg = "no mapping key"
+		p.statusView.Msg = "no mapping key"
 		return
 	}
 
@@ -495,7 +492,7 @@ func (p *Provider) menuEvent(ev termbox.Event) {
 func (p *Provider) detailEvent(ev termbox.Event) {
 	ea := getEventAction(ev, chMapOnDetail, keyMapOnDetail)
 	if ea == "" {
-		p.statusView.msg = "no mapping key"
+		p.statusView.Msg = "no mapping key"
 		return
 	}
 
@@ -517,7 +514,7 @@ func (p *Provider) detailEvent(ev termbox.Event) {
 func (p *Provider) downloadEvent(ev termbox.Event) {
 	ea := getEventAction(ev, chMapOnDownload, keyMapOnDownload)
 	if ea == "" {
-		p.statusView.msg = "no mapping key"
+		p.statusView.Msg = "no mapping key"
 		return
 	}
 

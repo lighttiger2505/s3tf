@@ -233,14 +233,3 @@ func (v *NavigationView) Draw() {
 	str := PadRight(v.currentPath, v.win.Box.Width, " ")
 	tbPrint(0, v.win.DrawY(0), termbox.ColorWhite, termbox.ColorBlue, str)
 }
-
-type StatusView struct {
-	Render
-	msg string
-	win *Window
-}
-
-func (v *StatusView) Draw() {
-	str := PadRight(v.msg, v.win.Box.Width, " ")
-	tbPrint(0, v.win.DrawY(0), termbox.ColorWhite, termbox.ColorBlue, str)
-}
