@@ -1,4 +1,4 @@
-package main
+package model
 
 import (
 	"strings"
@@ -31,28 +31,28 @@ func NewS3Object(objType S3ObjectType, name string, date *time.Time, size *int64
 }
 
 type Node struct {
-	key      string
-	parent   *Node
+	Key      string
+	Parent   *Node
 	children map[string]*Node
-	objects  []*S3Object
-	position int
+	Objects  []*S3Object
+	Position int
 }
 
 func NewNode(key string, parent *Node, objects []*S3Object) *Node {
 	node := &Node{
-		key:      key,
-		parent:   parent,
-		objects:  objects,
+		Key:      key,
+		Parent:   parent,
+		Objects:  objects,
 		children: map[string]*Node{},
 	}
 	if len(objects) > 1 {
-		node.position = 1
+		node.Position = 1
 	}
 	return node
 }
 
 func (n *Node) IsRoot() bool {
-	if n.parent == nil {
+	if n.Parent == nil {
 		return true
 	}
 	return false
@@ -62,11 +62,19 @@ func (n *Node) IsBucketRoot() bool {
 	if n.IsRoot() {
 		return false
 	}
-	if n.parent.IsRoot() {
+	if n.Parent.IsRoot() {
 		return true
 	}
 	return false
 }
+
+type S3ListType int
+
+const (
+	BucketList S3ListType = iota //0
+	BucketRootList
+	ObjectList
+)
 
 func (n *Node) GetType() S3ListType {
 	if n.IsRoot() {

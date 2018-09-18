@@ -1,4 +1,4 @@
-package main
+package model
 
 import (
 	"context"
@@ -13,6 +13,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+)
+
+var (
+	MockFlag bool
 )
 
 const RequestTimeout time.Duration = time.Second * 30
@@ -183,7 +187,7 @@ func Update(bucket, key string, body io.Reader) *s3.PutObjectOutput {
 
 func getS3Downloader() *s3manager.Downloader {
 	var sess *session.Session
-	if mockFlag {
+	if MockFlag {
 		sess = getMinioSession()
 	} else {
 		sess = getAWSSession()
@@ -193,7 +197,7 @@ func getS3Downloader() *s3manager.Downloader {
 
 func getS3Client() *s3.S3 {
 	var sess *session.Session
-	if mockFlag {
+	if MockFlag {
 		sess = getMinioSession()
 	} else {
 		sess = getAWSSession()

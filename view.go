@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/lighttiger2505/s3tf/model"
 	termbox "github.com/nsf/termbox-go"
 )
 
@@ -140,26 +141,18 @@ func (w *Window) DrawY(y int) int {
 	return w.Pos.Y + y
 }
 
-type S3ListType int
-
-const (
-	BucketList S3ListType = iota //0
-	BucketRootList
-	ObjectList
-)
-
 type ListView struct {
 	Render
 	key      string
-	listType S3ListType
-	objects  []*S3Object
+	listType model.S3ListType
+	objects  []*model.S3Object
 	layer    *Layer
 }
 
 func (v *ListView) Draw() {
 	for i, obj := range v.objects {
 		drawStr := obj.Name
-		if v.listType == ObjectList {
+		if v.listType == model.ObjectList {
 			drawStr = strings.TrimPrefix(obj.Name, v.key)
 		}
 
@@ -170,7 +163,7 @@ func (v *ListView) Draw() {
 				drawStr = PadRight(drawStr, v.layer.win.Box.Width, " ")
 				fg = termbox.ColorWhite
 				bg = termbox.ColorGreen
-			} else if Bucket == obj.ObjType || PreDir == obj.ObjType || Dir == obj.ObjType {
+			} else if model.Bucket == obj.ObjType || model.PreDir == obj.ObjType || model.Dir == obj.ObjType {
 				fg = termbox.ColorGreen
 				bg = termbox.ColorDefault
 			} else {
@@ -182,14 +175,14 @@ func (v *ListView) Draw() {
 	}
 }
 
-func (v *ListView) getCursorObject() *S3Object {
+func (v *ListView) getCursorObject() *model.S3Object {
 	return v.objects[v.layer.cursorPos.Y]
 }
 
-func (v *ListView) updateList(node *Node) {
-	v.layer.cursorPos.Y = node.position
-	v.objects = node.objects
-	v.key = node.key
+func (v *ListView) updateList(node *model.Node) {
+	v.layer.cursorPos.Y = node.Position
+	v.objects = node.Objects
+	v.key = node.Key
 	v.listType = node.GetType()
 }
 
@@ -215,7 +208,7 @@ type NavigationView struct {
 	win         *Window
 }
 
-func (v *NavigationView) SetCurrentPath(bucket string, node *Node) {
+func (v *NavigationView) SetCurrentPath(bucket string, node *model.Node) {
 	if node.IsRoot() {
 		v.currentPath = "list bucket"
 		return
@@ -225,7 +218,7 @@ func (v *NavigationView) SetCurrentPath(bucket string, node *Node) {
 	if node.IsBucketRoot() {
 		v.currentPath = showBucketName
 	} else {
-		v.currentPath = strings.Join([]string{showBucketName, node.key}, "/")
+		v.currentPath = strings.Join([]string{showBucketName, node.Key}, "/")
 	}
 }
 

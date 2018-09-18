@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/lighttiger2505/s3tf/internal"
+	"github.com/lighttiger2505/s3tf/model"
 	"github.com/nsf/termbox-go"
 	"github.com/urfave/cli"
 )
@@ -46,10 +47,6 @@ func newApp() *cli.App {
 	return app
 }
 
-var (
-	mockFlag bool
-)
-
 func isFileExist(fPath string) bool {
 	_, err := os.Stat(fPath)
 	return err == nil || !os.IsNotExist(err)
@@ -66,7 +63,7 @@ func run(c *cli.Context) error {
 	log.SetOutput(io.MultiWriter(logfile))
 
 	// Set flags
-	mockFlag = c.Bool("mock")
+	model.MockFlag = c.Bool("mock")
 
 	if err := termbox.Init(); err != nil {
 		panic(err)

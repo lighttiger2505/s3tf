@@ -137,7 +137,7 @@ const (
 type Provider struct {
 	EventHandler
 	status         ProviderStatus
-	node           *Node
+	node           *model.Node
 	bucket         string
 	dllFile        *model.DownloadListFile
 	listView       *ListView
@@ -158,7 +158,7 @@ func NewProvider() *Provider {
 
 func (p *Provider) Init() {
 	// Init s3 data structure
-	rootNode := NewNode("", nil, ListBuckets())
+	rootNode := model.NewNode("", nil, model.ListBuckets())
 	width, height := termbox.Size()
 	halfWidth := width / 2
 	halfHeight := height / 2
@@ -172,8 +172,8 @@ func (p *Provider) Init() {
 	p.dllFile = dllFile
 
 	listView := &ListView{}
-	listView.objects = p.node.objects
-	listView.key = p.node.key
+	listView.objects = p.node.Objects
+	listView.key = p.node.Key
 	listView.layer = NewLayer(0, 1, width, height-2)
 	p.listView = listView
 
@@ -225,27 +225,27 @@ func (p *Provider) Draw() {
 
 func (p *Provider) reload() {
 	if p.node.IsRoot() {
-		p.node.objects = ListBuckets()
-		p.listView.objects = p.node.objects
+		p.node.Objects = model.ListBuckets()
+		p.listView.objects = p.node.Objects
 		return
 	}
 
 	if p.node.IsBucketRoot() {
-		p.node.objects = ListObjects(p.bucket, "")
-		p.listView.objects = p.node.objects
+		p.node.Objects = model.ListObjects(p.bucket, "")
+		p.listView.objects = p.node.Objects
 		return
 	}
 
-	p.node.objects = ListObjects(p.bucket, p.node.key)
-	p.listView.objects = p.node.objects
+	p.node.Objects = model.ListObjects(p.bucket, p.node.Key)
+	p.listView.objects = p.node.Objects
 }
 
 func (p *Provider) download() {
 	obj := p.listView.getCursorObject()
 	bucketName := p.bucket
 	switch obj.ObjType {
-	case Object:
-		filename := Filename(obj.Name)
+	case model.Object:
+		filename := model.Filename(obj.Name)
 		currentDir, _ := os.Getwd()
 		downloadPath := filepath.Join(currentDir, filename)
 		f, err := os.Create(downloadPath)
@@ -254,7 +254,7 @@ func (p *Provider) download() {
 		}
 		defer f.Close()
 
-		Download(bucketName, obj.Name, f)
+		model.Download(bucketName, obj.Name, f)
 		s3Path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
 
 		p.dllFile.Items = append(
@@ -279,15 +279,15 @@ func (p *Provider) open() {
 	obj := p.listView.getCursorObject()
 	bucketName := p.bucket
 	switch obj.ObjType {
-	case Object:
+	case model.Object:
 		tempDir, _ := ioutil.TempDir("", "")
-		f, err := os.Create(filepath.Join(tempDir, Filename(obj.Name)))
+		f, err := os.Create(filepath.Join(tempDir, model.Filename(obj.Name)))
 		if err != nil {
 			log.Fatalf("failed create donwload reader, %v", err)
 		}
 		defer f.Close()
 
-		Download(bucketName, obj.Name, f)
+		model.Download(bucketName, obj.Name, f)
 		if err := Open(f.Name()); err != nil {
 			log.Fatalf("failed open file, %v", err)
 		}
@@ -303,14 +303,14 @@ func (p *Provider) edit() {
 	obj := p.listView.getCursorObject()
 	bucketName := p.bucket
 	switch obj.ObjType {
-	case Object:
+	case model.Object:
 		// download edit file on temporary file
 		tempDir, _ := ioutil.TempDir("", "")
-		f, err := os.Create(filepath.Join(tempDir, Filename(obj.Name)))
+		f, err := os.Create(filepath.Join(tempDir, model.Filename(obj.Name)))
 		if err != nil {
 			log.Fatalf("failed create donwload reader, %v", err)
 		}
-		Download(bucketName, obj.Name, f)
+		model.Download(bucketName, obj.Name, f)
 		editFilePath := f.Name()
 		f.Close()
 
@@ -324,7 +324,7 @@ func (p *Provider) edit() {
 		if err != nil {
 			log.Fatalf("failed open edited file, %v", err)
 		}
-		Update(bucketName, obj.Name, editedf)
+		model.Update(bucketName, obj.Name, editedf)
 
 		path := "s3://" + strings.Join([]string{bucketName, obj.Name}, "/")
 		p.statusView.Msg = fmt.Sprintf("edit. %s", path)
@@ -333,29 +333,29 @@ func (p *Provider) edit() {
 	}
 }
 
-func (p *Provider) show(obj *S3Object) {
+func (p *Provider) show(obj *model.S3Object) {
 	switch obj.ObjType {
-	case Bucket:
+	case model.Bucket:
 		bucketName := obj.Name
 		p.bucket = bucketName
 		if p.node.IsExistChildren(bucketName) {
 			p.moveNext(bucketName)
 			return
 		}
-		objects := ListObjects(bucketName, "")
+		objects := model.ListObjects(bucketName, "")
 		p.loadNext(bucketName, objects)
-	case Dir:
+	case model.Dir:
 		bucketName := p.bucket
 		objectKey := obj.Name
 		if p.node.IsExistChildren(objectKey) {
 			p.moveNext(objectKey)
 			return
 		}
-		objects := ListObjects(bucketName, objectKey)
+		objects := model.ListObjects(bucketName, objectKey)
 		p.loadNext(objectKey, objects)
-	case PreDir:
+	case model.PreDir:
 		p.loadPrev()
-	case Object:
+	case model.Object:
 	default:
 		log.Fatalln("Invalid s3 object type")
 	}
@@ -365,32 +365,32 @@ func (p *Provider) moveNext(key string) {
 	child := p.node.GetChild(key)
 	p.node = child
 	p.listView.updateList(child)
-	log.Printf("Move next. child:%s", child.key)
+	log.Printf("Move next. child:%s", child.Key)
 }
 
-func (p *Provider) loadNext(key string, objects []*S3Object) {
+func (p *Provider) loadNext(key string, objects []*model.S3Object) {
 	parent := p.node
-	child := NewNode(key, parent, objects)
+	child := model.NewNode(key, parent, objects)
 	parent.AddChild(key, child)
 	p.node = child
 	p.listView.updateList(child)
-	log.Printf("Load next. parent:%s, child:%s", parent.key, child.key)
+	log.Printf("Load next. parent:%s, child:%s", parent.Key, child.Key)
 }
 
 func (p *Provider) loadPrev() {
-	parent := p.node.parent
+	parent := p.node.Parent
 	p.node = parent
 	p.listView.updateList(parent)
-	log.Printf("Load prev. parent:%s", parent.key)
+	log.Printf("Load prev. parent:%s", parent.Key)
 }
 
 func (p *Provider) menu() {
 	p.status = StateMenu
 }
 
-func (p *Provider) detail(obj *S3Object) {
+func (p *Provider) detail(obj *model.S3Object) {
 	p.status = StateDetail
-	p.detailView.Obj = Detail(p.bucket, obj.Name)
+	p.detailView.Obj = model.Detail(p.bucket, obj.Name)
 	p.detailView.Key = obj.Name
 }
 
@@ -427,9 +427,9 @@ func (p *Provider) listEvent(ev termbox.Event) {
 			panic("this should never run")
 		}()
 	case actDown:
-		p.node.position = p.listView.down()
+		p.node.Position = p.listView.down()
 	case actUp:
-		p.node.position = p.listView.up()
+		p.node.Position = p.listView.up()
 	case actHalfUp:
 		p.listView.halfPageUp()
 	case actHalfDown:
