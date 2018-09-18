@@ -144,7 +144,7 @@ type Provider struct {
 	navigationView *NavigationView
 	statusView     *StatusView
 	menuView       *MenuView
-	detailView     *DetailView
+	detailView     *view.DetailView
 	downloadView   *view.DownloadView
 }
 
@@ -194,12 +194,8 @@ func (p *Provider) Init() {
 	menuView.layer = NewLayer(0, halfHeight, width, height-halfHeight)
 	p.menuView = menuView
 
-	detailView := &DetailView{}
-	detailView.layer = NewLayer(halfWidth, 1, width-halfWidth, height-2)
-	p.detailView = detailView
-
-	downloadView := view.NewDownloadView(0, 1, width, height-2)
-	p.downloadView = downloadView
+	p.detailView = view.NewDetailView(halfWidth, 1, width-halfWidth, height-2)
+	p.downloadView = view.NewDownloadView(0, 1, width, height-2)
 }
 
 func (p *Provider) Loop() {
@@ -405,8 +401,8 @@ func (p *Provider) menu() {
 
 func (p *Provider) detail(obj *S3Object) {
 	p.status = StateDetail
-	p.detailView.obj = Detail(p.bucket, obj.Name)
-	p.detailView.key = obj.Name
+	p.detailView.Obj = Detail(p.bucket, obj.Name)
+	p.detailView.Key = obj.Name
 }
 
 func (p *Provider) openDownload() {
@@ -515,13 +511,13 @@ func (p *Provider) detailEvent(ev termbox.Event) {
 	case actQuit:
 		p.status = StateList
 	case actUp:
-		p.detailView.up()
+		p.detailView.Up()
 	case actDown:
-		p.detailView.down()
+		p.detailView.Down()
 	case actHalfUp:
-		p.detailView.halfPageUp()
+		p.detailView.HalfPageUp()
 	case actHalfDown:
-		p.detailView.halfPageDown()
+		p.detailView.HalfPageDown()
 	default:
 	}
 }

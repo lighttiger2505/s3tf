@@ -5,8 +5,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
 	termbox "github.com/nsf/termbox-go"
 )
 
@@ -307,59 +305,4 @@ func (v *MenuView) up() int {
 
 func (v *MenuView) down() int {
 	return v.layer.DownCursor(1, len(v.items))
-}
-
-type DetailView struct {
-	Render
-	key   string
-	obj   *s3.GetObjectOutput
-	layer *Layer
-}
-
-func (v *DetailView) getContents() []string {
-	base := `%v
-
-    LastModified: %v
-    Size: %v B
-    ETag: %v
-    Tags: %v`
-	res := fmt.Sprintf(
-		base,
-		v.key,
-		aws.TimeValue(v.obj.LastModified),
-		aws.Int64Value(v.obj.ContentLength),
-		aws.StringValue(v.obj.ETag),
-		aws.Int64Value(v.obj.TagCount),
-	)
-	return strings.Split(res, "\n")
-}
-
-func (v *DetailView) up() int {
-	return v.layer.UpCursor(1)
-}
-
-func (v *DetailView) down() int {
-	lines := v.getContents()
-	return v.layer.DownCursor(1, len(lines))
-}
-
-func (v *DetailView) halfPageUp() int {
-	return v.layer.HalfPageUpCursor()
-}
-
-func (v *DetailView) halfPageDown() int {
-	return v.layer.HalfPageDownCursor(len(v.getContents()))
-}
-
-func (v *DetailView) Draw() {
-	v.layer.DrawBackGround(termbox.ColorDefault, termbox.ColorDefault)
-
-	lines := v.getContents()
-	v.layer.DrawContents(
-		lines,
-		termbox.ColorWhite,
-		termbox.ColorGreen,
-		termbox.ColorDefault,
-		termbox.ColorDefault,
-	)
 }
