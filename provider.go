@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lighttiger2505/s3tf/model"
+	"github.com/lighttiger2505/s3tf/view"
 	termbox "github.com/nsf/termbox-go"
 )
 
@@ -137,13 +139,13 @@ type Provider struct {
 	status         ProviderStatus
 	node           *Node
 	bucket         string
-	dllFile        *DownloadListFile
+	dllFile        *model.DownloadListFile
 	listView       *ListView
 	navigationView *NavigationView
 	statusView     *StatusView
 	menuView       *MenuView
 	detailView     *DetailView
-	downloadView   *DownloadView
+	downloadView   *view.DownloadView
 }
 
 func NewProvider() *Provider {
@@ -163,7 +165,7 @@ func (p *Provider) Init() {
 
 	p.status = StateList
 	p.node = rootNode
-	dllFile, err := LoadDownloadFile()
+	dllFile, err := model.LoadDownloadFile()
 	if err != nil {
 		panic("failed load download list file.")
 	}
@@ -196,8 +198,7 @@ func (p *Provider) Init() {
 	detailView.layer = NewLayer(halfWidth, 1, width-halfWidth, height-2)
 	p.detailView = detailView
 
-	downloadView := &DownloadView{}
-	downloadView.layer = NewLayer(0, 1, width, height-2)
+	downloadView := view.NewDownloadView(0, 1, width, height-2)
 	p.downloadView = downloadView
 }
 
@@ -273,13 +274,13 @@ func (p *Provider) download() {
 
 		p.dllFile.Items = append(
 			p.dllFile.Items,
-			NewDownloadItem(
+			model.NewDownloadItem(
 				filename,
 				downloadPath,
 				s3Path,
 			),
 		)
-		if err := SaveDownloadFile(p.dllFile); err != nil {
+		if err := model.SaveDownloadFile(p.dllFile); err != nil {
 			log.Fatalf("failed save download list file, %v", err)
 		}
 
@@ -410,7 +411,7 @@ func (p *Provider) detail(obj *S3Object) {
 
 func (p *Provider) openDownload() {
 	p.status = StateDownload
-	p.downloadView.objects = p.dllFile.Items
+	p.downloadView.Objects = p.dllFile.Items
 }
 
 func (p *Provider) Handle(ev termbox.Event) {
@@ -536,13 +537,13 @@ func (p *Provider) downloadEvent(ev termbox.Event) {
 	case actQuit:
 		p.status = StateList
 	case actUp:
-		p.downloadView.up()
+		p.downloadView.Up()
 	case actDown:
-		p.downloadView.down()
+		p.downloadView.Down()
 	case actHalfUp:
-		p.downloadView.halfPageUp()
+		p.downloadView.HalfPageUp()
 	case actHalfDown:
-		p.downloadView.halfPageDown()
+		p.downloadView.HalfPageDown()
 	default:
 	}
 }
