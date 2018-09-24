@@ -2,9 +2,7 @@ package main
 
 import (
 	"log"
-	"strings"
 
-	"github.com/lighttiger2505/s3tf/model"
 	termbox "github.com/nsf/termbox-go"
 )
 
@@ -149,65 +147,4 @@ func (w *Window) DrawX(x int) int {
 
 func (w *Window) DrawY(y int) int {
 	return w.Pos.Y + y
-}
-
-type ListView struct {
-	Render
-	key      string
-	listType model.S3ListType
-	objects  []*model.S3Object
-	layer    *Layer
-}
-
-func (v *ListView) Draw() {
-	for i, obj := range v.objects {
-		drawStr := obj.Name
-		if v.listType == model.ObjectList {
-			drawStr = strings.TrimPrefix(obj.Name, v.key)
-		}
-
-		if i >= v.layer.drawPos.Y {
-			drawY := v.layer.getDrawY(i)
-			var fg, bg termbox.Attribute
-			if drawY == v.layer.getCursorY() {
-				drawStr = PadRight(drawStr, v.layer.win.Box.Width, " ")
-				fg = termbox.ColorWhite
-				bg = termbox.ColorGreen
-			} else if model.Bucket == obj.ObjType || model.PreDir == obj.ObjType || model.Dir == obj.ObjType {
-				fg = termbox.ColorGreen
-				bg = termbox.ColorDefault
-			} else {
-				fg = termbox.ColorDefault
-				bg = termbox.ColorDefault
-			}
-			tbPrint(0, drawY, fg, bg, drawStr)
-		}
-	}
-}
-
-func (v *ListView) getCursorObject() *model.S3Object {
-	return v.objects[v.layer.cursorPos.Y]
-}
-
-func (v *ListView) updateList(node *model.Node) {
-	v.layer.cursorPos.Y = node.Position
-	v.objects = node.Objects
-	v.key = node.Key
-	v.listType = node.GetType()
-}
-
-func (v *ListView) up() int {
-	return v.layer.UpCursor(1)
-}
-
-func (v *ListView) down() int {
-	return v.layer.DownCursor(1, len(v.objects))
-}
-
-func (v *ListView) halfPageUp() int {
-	return v.layer.HalfPageUpCursor()
-}
-
-func (v *ListView) halfPageDown() int {
-	return v.layer.HalfPageDownCursor(len(v.objects))
 }

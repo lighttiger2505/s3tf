@@ -140,7 +140,7 @@ type Provider struct {
 	node           *model.Node
 	bucket         string
 	dllFile        *model.DownloadListFile
-	listView       *ListView
+	listView       *view.ListView
 	navigationView *view.NavigationView
 	statusView     *view.StatusView
 	menuView       *view.MenuView
@@ -171,13 +171,9 @@ func (p *Provider) Init() {
 	}
 	p.dllFile = dllFile
 
-	listView := &ListView{}
-	listView.objects = p.node.Objects
-	listView.key = p.node.Key
-	listView.layer = NewLayer(0, 1, width, height-2)
-	p.listView = listView
-
-	// navigationView := &view.NavigationView{}
+	p.listView = view.NewListView(0, 1, width, height-2)
+	p.listView.Objects = p.node.Objects
+	p.listView.Key = p.node.Key
 	p.navigationView = view.NewNavigationView(0, 0, width, 1)
 	p.statusView = view.NewStatusView(0, height-1, width, 1)
 	p.menuView = view.NewMenuView(0, halfHeight, width, height-halfHeight)
@@ -210,7 +206,7 @@ func (p *Provider) Resize() {
 	halfWidth := width / 2
 	halfHeight := height / 2
 
-	p.listView.layer.Resize(0, 1, width, height-2)
+	p.listView.Layer.Resize(0, 1, width, height-2)
 	p.navigationView.Win.Resize(0, 0, width, 1)
 	p.statusView.Win.Resize(0, height-1, width, 1)
 	p.menuView.Layer.Resize(0, halfHeight, width, height-halfHeight)
@@ -238,22 +234,22 @@ func (p *Provider) Draw() {
 func (p *Provider) reload() {
 	if p.node.IsRoot() {
 		p.node.Objects = model.ListBuckets()
-		p.listView.objects = p.node.Objects
+		p.listView.Objects = p.node.Objects
 		return
 	}
 
 	if p.node.IsBucketRoot() {
 		p.node.Objects = model.ListObjects(p.bucket, "")
-		p.listView.objects = p.node.Objects
+		p.listView.Objects = p.node.Objects
 		return
 	}
 
 	p.node.Objects = model.ListObjects(p.bucket, p.node.Key)
-	p.listView.objects = p.node.Objects
+	p.listView.Objects = p.node.Objects
 }
 
 func (p *Provider) download() {
-	obj := p.listView.getCursorObject()
+	obj := p.listView.GetCursorObject()
 	bucketName := p.bucket
 	switch obj.ObjType {
 	case model.Object:
@@ -288,7 +284,7 @@ func (p *Provider) download() {
 }
 
 func (p *Provider) open() {
-	obj := p.listView.getCursorObject()
+	obj := p.listView.GetCursorObject()
 	bucketName := p.bucket
 	switch obj.ObjType {
 	case model.Object:
@@ -312,7 +308,7 @@ func (p *Provider) open() {
 }
 
 func (p *Provider) edit() {
-	obj := p.listView.getCursorObject()
+	obj := p.listView.GetCursorObject()
 	bucketName := p.bucket
 	switch obj.ObjType {
 	case model.Object:
@@ -354,8 +350,8 @@ func (p *Provider) show(obj *model.S3Object) {
 			p.moveNext(bucketName)
 			return
 		}
-		objects := model.ListObjects(bucketName, "")
-		p.loadNext(bucketName, objects)
+		Objects := model.ListObjects(bucketName, "")
+		p.loadNext(bucketName, Objects)
 	case model.Dir:
 		bucketName := p.bucket
 		objectKey := obj.Name
@@ -363,8 +359,8 @@ func (p *Provider) show(obj *model.S3Object) {
 			p.moveNext(objectKey)
 			return
 		}
-		objects := model.ListObjects(bucketName, objectKey)
-		p.loadNext(objectKey, objects)
+		Objects := model.ListObjects(bucketName, objectKey)
+		p.loadNext(objectKey, Objects)
 	case model.PreDir:
 		p.loadPrev()
 	case model.Object:
@@ -376,7 +372,7 @@ func (p *Provider) show(obj *model.S3Object) {
 func (p *Provider) moveNext(key string) {
 	child := p.node.GetChild(key)
 	p.node = child
-	p.listView.updateList(child)
+	p.listView.UpdateList(child)
 	log.Printf("Move next. child:%s", child.Key)
 }
 
@@ -385,14 +381,14 @@ func (p *Provider) loadNext(key string, objects []*model.S3Object) {
 	child := model.NewNode(key, parent, objects)
 	parent.AddChild(key, child)
 	p.node = child
-	p.listView.updateList(child)
+	p.listView.UpdateList(child)
 	log.Printf("Load next. parent:%s, child:%s", parent.Key, child.Key)
 }
 
 func (p *Provider) loadPrev() {
 	parent := p.node.Parent
 	p.node = parent
-	p.listView.updateList(parent)
+	p.listView.UpdateList(parent)
 	log.Printf("Load prev. parent:%s", parent.Key)
 }
 
@@ -439,17 +435,17 @@ func (p *Provider) listEvent(ev termbox.Event) {
 			panic("this should never run")
 		}()
 	case actDown:
-		p.node.Position = p.listView.down()
+		p.node.Position = p.listView.Down()
 	case actUp:
-		p.node.Position = p.listView.up()
+		p.node.Position = p.listView.Up()
 	case actHalfUp:
-		p.listView.halfPageUp()
+		p.listView.HalfPageUp()
 	case actHalfDown:
-		p.listView.halfPageDown()
+		p.listView.HalfPageDown()
 	case actOpenMenu:
 		p.menu()
 	case actOpenDetail:
-		obj := p.listView.getCursorObject()
+		obj := p.listView.GetCursorObject()
 		p.detail(obj)
 	case actOpenDownload:
 		p.openDownload()
@@ -458,7 +454,7 @@ func (p *Provider) listEvent(ev termbox.Event) {
 			p.loadPrev()
 		}
 	case actMoveNextDir:
-		obj := p.listView.getCursorObject()
+		obj := p.listView.GetCursorObject()
 		p.show(obj)
 	case actReloadDir:
 		p.reload()
