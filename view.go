@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"strings"
 
@@ -25,6 +24,10 @@ func NewLayer(x, y, width, height int) *Layer {
 		cursorPos: newPosition(0, 0),
 		drawPos:   newPosition(0, 0),
 	}
+}
+
+func (l *Layer) Resize(x, y, width, height int) {
+	l.win.Resize(x, y, width, height)
 }
 
 func (l *Layer) getCursorY() int {
@@ -131,6 +134,13 @@ func newWindow(x, y, width, height int) *Window {
 			Height: height,
 		},
 	}
+}
+
+func (w *Window) Resize(x, y, width, height int) {
+	w.Pos.X = x
+	w.Pos.Y = y
+	w.Box.Width = width
+	w.Box.Height = height
 }
 
 func (w *Window) DrawX(x int) int {

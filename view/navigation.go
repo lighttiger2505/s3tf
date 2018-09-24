@@ -11,12 +11,12 @@ import (
 type NavigationView struct {
 	Render
 	currentPath string
-	win         *Window
+	Win         *Window
 }
 
 func NewNavigationView(x, y, width, height int) *NavigationView {
 	return &NavigationView{
-		win: newWindow(x, y, width, height),
+		Win: newWindow(x, y, width, height),
 	}
 }
 
@@ -35,6 +35,6 @@ func (v *NavigationView) SetCurrentPath(bucket string, node *model.Node) {
 }
 
 func (v *NavigationView) Draw() {
-	str := PadRight(v.currentPath, v.win.Box.Width, " ")
-	tbPrint(0, v.win.DrawY(0), termbox.ColorWhite, termbox.ColorBlue, str)
+	str := PadRight(v.currentPath, v.Win.Box.Width, " ")
+	tbPrint(0, v.Win.DrawY(0), termbox.ColorWhite, termbox.ColorBlue, str)
 }

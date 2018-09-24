@@ -24,6 +24,10 @@ func NewLayer(x, y, width, height int) *Layer {
 	}
 }
 
+func (l *Layer) Resize(x, y, width, height int) {
+	l.win.Resize(x, y, width, height)
+}
+
 func (l *Layer) getCursorY() int {
 	return l.win.DrawY(l.cursorPos.Y) - l.drawPos.Y
 }
@@ -128,6 +132,13 @@ func newWindow(x, y, width, height int) *Window {
 			Height: height,
 		},
 	}
+}
+
+func (w *Window) Resize(x, y, width, height int) {
+	w.Pos.X = x
+	w.Pos.Y = y
+	w.Box.Width = width
+	w.Box.Height = height
 }
 
 func (w *Window) DrawX(x int) int {

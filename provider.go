@@ -141,7 +141,7 @@ type Provider struct {
 	bucket         string
 	dllFile        *model.DownloadListFile
 	listView       *ListView
-	navigationView *NavigationView
+	navigationView *view.NavigationView
 	statusView     *view.StatusView
 	menuView       *view.MenuView
 	detailView     *view.DetailView
@@ -177,10 +177,8 @@ func (p *Provider) Init() {
 	listView.layer = NewLayer(0, 1, width, height-2)
 	p.listView = listView
 
-	navigationView := &NavigationView{}
-	navigationView.win = newWindow(0, 0, width, 1)
-	p.navigationView = navigationView
-
+	// navigationView := &view.NavigationView{}
+	p.navigationView = view.NewNavigationView(0, 0, width, 1)
 	p.statusView = view.NewStatusView(0, height-1, width, 1)
 	p.menuView = view.NewMenuView(0, halfHeight, width, height-halfHeight)
 	p.detailView = view.NewDetailView(halfWidth, 1, width-halfWidth, height-2)
@@ -198,12 +196,26 @@ func (p *Provider) Loop() {
 		case termbox.EventInterrupt:
 			return
 		}
+		p.Resize()
 		p.Draw()
 	}
 }
 
 func (p *Provider) Update() {
 	p.navigationView.SetCurrentPath(p.bucket, p.node)
+}
+
+func (p *Provider) Resize() {
+	width, height := termbox.Size()
+	halfWidth := width / 2
+	halfHeight := height / 2
+
+	p.listView.layer.Resize(0, 1, width, height-2)
+	p.navigationView.Win.Resize(0, 0, width, 1)
+	p.statusView.Win.Resize(0, height-1, width, 1)
+	p.menuView.Layer.Resize(0, halfHeight, width, height-halfHeight)
+	p.detailView.Layer.Resize(halfWidth, 1, width-halfWidth, height-2)
+	p.downloadView.Layer.Resize(0, 1, width, height-2)
 }
 
 func (p *Provider) Draw() {
